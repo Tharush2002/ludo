@@ -1,40 +1,76 @@
+#include "board_mapping.h"
 #include "raylib.h"
+#include <stdio.h>
+#include <math.h>
 
-#define BOARD_SIZE 15
-#define CELL_SIZE 40
+#define BOARD_WIDTH 1024   // Set to your image width
+#define BOARD_HEIGHT 1024  // Set to your image height
+#define NUM_SQUARES 52
+#define MOVE_SPEED 8.0f
 
 typedef struct {
-    int x, y; // Board coordinates
+    //Vector2 pos; // Position in pixels
+    int board_index;
+    float x,y;
     Color color;
 } Piece;
 
 int main(void) {
-    InitWindow(BOARD_SIZE * CELL_SIZE, BOARD_SIZE * CELL_SIZE, "Ludo Demo - Raylib");
+	if (!load_board_map("./assets/mappings.csv")) {
+        	printf("Failed to load board map!\n");
+	        return 1;
+    	}
 
-    Piece piece = {1, 6, GREEN}; // Start at (1,6) for demonstration
+	InitWindow(BOARD_WIDTH, BOARD_HEIGHT, "Ludo Board Game");
 
-    while (!WindowShouldClose()) {
-        // Move piece with arrow keys
-        if (IsKeyPressed(KEY_RIGHT)) piece.x++;
-        if (IsKeyPressed(KEY_LEFT))  piece.x--;
-        if (IsKeyPressed(KEY_UP))    piece.y--;
-        if (IsKeyPressed(KEY_DOWN))  piece.y++;
+	// Load the board image as a texture
+	Texture2D board = LoadTexture("./assets/board.png"); // <-- Use your image file here
 
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
+	if (board.id == 0) {
+        	printf("Failed to load board image!\n");
+	        CloseWindow();
+	        return 1;
+	}
 
-        // Draw board grid
-        for (int i = 0; i < BOARD_SIZE; i++)
-            for (int j = 0; j < BOARD_SIZE; j++)
-                DrawRectangleLines(i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE, LIGHTGRAY);
+	// Example: one green piece
+	Piece greenPiece = { .board_index=0, .x=576, .y=126, .color = GREEN };
 
-        // Draw piece
-        DrawCircle(piece.x * CELL_SIZE + CELL_SIZE/2, piece.y * CELL_SIZE + CELL_SIZE/2, CELL_SIZE/2 - 5, piece.color);
+	SetTargetFPS(60);
 
-        EndDrawing();
-    }
+	while (!WindowShouldClose()) {
+        	// Example: move piece with arrow keys
+	        if (IsKeyPressed(KEY_RIGHT)) greenPiece.board_index = (greenPiece.board_index + 1) % NUM_SQUARES;
+		if (IsKeyPressed(KEY_LEFT)) greenPiece.board_index = (greenPiece.board_index + 1) % NUM_SQUARES;
+	        //if (IsKeyDown(KEY_DOWN))  greenPiece.pos.y += 2;
+	        //if (IsKeyDown(KEY_UP))    greenPiece.pos.y -= 2;
 
-    CloseWindow();
-    return 0;
+        	BeginDrawing();
+	        ClearBackground(RAYWHITE);
+
+        	DrawTexture(board, 0, 0, WHITE); // Draw the board image
+
+	        // Draw the piece on top
+	        BoardSquares target = board_squares[greenPiece.board_index];
+
+		if (fabs(greenPiece.x - target.x) > MOVE_SPEED) {
+			greenPiece.x += (greenPiece.x < target.x) ? MOVE_SPEED : -MOVE_SPEED;
+		} else {
+			greenPiece.x = target.x;
+		}
+
+		if (fabs(greenPiece.y - target.y) > MOVE_SPEED) {
+			greenPiece.y += (greenPiece.y < target.y) ? MOVE_SPEED : -MOVE_SPEED;
+		} else {
+			greenPiece.y = target.y;
+		}
+
+	        DrawCircle(greenPiece.x, greenPiece.y, 20, greenPiece.color);
+
+	        EndDrawing();
+	}
+
+	UnloadTexture(board);
+	CloseWindow();
+	return 0;
 }
 
