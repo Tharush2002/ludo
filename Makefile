@@ -5,7 +5,7 @@ CC = gcc
 CFLAGS = -Iinclude -Wall -Wextra -std=c99
 
 # Source files
-SRC = src/gui.c src/board_mapping.c
+SRC = src/main.c src/gui.c src/board_mapping.c
 
 #src/gui.c src/game_engine.c src/player_behavior.c
 
