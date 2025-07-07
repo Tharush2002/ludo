@@ -5,9 +5,7 @@ CC = gcc
 CFLAGS = -Iinclude -Wall -Wextra -std=c99
 
 # Source files
-SRC = src/main.c src/gui.c src/board_mapping.c
-
-#src/gui.c src/game_engine.c src/player_behavior.c
+SRC = src/main.c src/gui.c src/board_mapping.c src/utils.c
 
 # Output executable
 OUT = ludo
