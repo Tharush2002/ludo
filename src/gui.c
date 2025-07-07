@@ -14,11 +14,11 @@ void cleanup_gui(void) {
     CloseWindow();
 }
 
-void render_game(const Piece *piece) {
+void render_game(float x, float y) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
     DrawTexture(board_texture, 0, 0, WHITE);
-    DrawCircle((int)piece->x, (int)piece->y, 20, piece->color);
+    DrawCircle((int)x, (int)y, 20, GREEN);
     EndDrawing();
 }
 
