@@ -2,6 +2,7 @@
 #define BOARD_MAPPING_H
 
 #include "types.h"
+#include "utils.h"
 #include <stdio.h>
 
 typedef struct {
