@@ -1,7 +1,4 @@
 #include "utils.h"
-//#include <stdio.h>
-//#include <math.h>
-//#include "board_mapping.h"
 
 const char* get_colour(Colour colour){
 	switch(colour){

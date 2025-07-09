@@ -4,6 +4,7 @@
 #include "types.h"
 #include "utils.h"
 #include <stdio.h>
+#include <string.h>
 
 typedef struct {
 	Square square[4];

@@ -1,7 +1,4 @@
 #include "board_mapping.h"
-//#include "utils.h"
-#include <stdio.h>
-#include <string.h>
 
 Square standard[52];
 Base_Squares base[4];
@@ -73,39 +70,3 @@ void load_squares(FILE *file, SquareType type){
 		}
     	}
 }
-
-/*int load_main_squares(const char *main_squares){
-	FILE *file = fopen(main_squares, "r");
-	if(!file) return 0;
-	int index, x, y;
-
-	fscanf(file, "index, x coordinates, y coordinates\n");
-	for (int i = 0; i < 52; ++i) {
-        	if (fscanf(file, "%d,%d,%d\n",&index, &x, &y) != 3) break;
-	        main[index].x = x;
-        	main[index].y = y;
-
-		printf("%d\t%d",main[index].x,main[index].y);
-	}
-	fclose(file);
-	return 1;
-}
-
-int load_non_main_squares(const char *non_main_squares){	
-	FILE *file = fopen(non_main_squares, "r");
-	if(!file) return 0;
-	int index, x, y;
-	char *colour;
-
-	fscanf(file, "index, colour, x coordinates, y coordinates\n");
-	for (int i = 0; i < 52; ++i) {
-        	if (fscanf(file, "%d,%s,%d,%d\n", &index, *colour, &x, &y) != 4) break;
-	        [index].x = x;
-        	main[index].y = y;
-		
-
-		printf("%d\t%d",main[index].x,main[index].y);
-	}
-	fclose(file);
-}
-*/

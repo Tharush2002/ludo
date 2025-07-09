@@ -1,6 +1,4 @@
 #include "gui.h"
-#include "raylib.h"
-#include <stdio.h>
 
 static Texture2D board_texture, red_piece, blue_piece, green_piece, yellow_piece;
 
@@ -39,8 +37,7 @@ void render_game(Piece (*pieces)[NUM_PIECES]) {
 			);
 		}
     	}
-
-	//DrawCircle(512, 512, 20, GREEN);		
+	
 	EndDrawing();
 }
 

@@ -3,8 +3,9 @@
 
 #include "types.h"
 #include "raylib.h"
-#include <assert.h>
 #include "utils.h"
+#include <assert.h>
+#include <stdio.h>
 
 void init_gui(void);
 void cleanup_gui(void);
