@@ -74,17 +74,6 @@ void load_squares(FILE *file, SquareType type){
     	}
 }
 
-void bypass_lines_until(FILE *file, char *line, SquareType type){
-	const char *section = get_square_type(type);
-	while (fgets(line, 256, file)) {
-		line[strcspn(line, "\r\n")] = 0;
-		if (strcmp(line, section) == 0){
-			break;
-		}
-	}
-	fgets(line, sizeof(line), file);
-}
-
 /*int load_main_squares(const char *main_squares){
 	FILE *file = fopen(main_squares, "r");
 	if(!file) return 0;
