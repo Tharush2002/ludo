@@ -1,0 +1,8 @@
+# .gitignore
+*.o
+a.out
+*.exe
+*~
+*.swp
+*.swo
+
