@@ -1,8 +1,9 @@
 #include "game_engine.h"
 
 Piece pieces[NUM_OPPONENTS][NUM_PIECES];
+GameState game;
 
-void init_pieces(){
+void init_game(){
 	for(int i = 0 ; i < NUM_OPPONENTS ; i++){
 		for(int j = 0 ; j < NUM_PIECES ; j++){
 			pieces[i][j].location_type = BASE;
@@ -13,6 +14,7 @@ void init_pieces(){
 			pieces[i][j].colour = i;
 		}
 	}
+	game.pieces = pieces;
 }
 
 /*void decide_move(Piece *movable_pieces, int roll){
