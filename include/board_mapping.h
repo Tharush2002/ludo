@@ -6,19 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct {
-	Square square[4];
-	Colour colour;
-} Base_Squares;
-
-typedef struct {
-	Square square[5];
-	Colour colour;
-} Home_Squares;
-
 extern Square standard[52];
-extern Base_Squares base[4];
-extern Home_Squares home[4];
+extern Square base[NUM_OPPONENTS][4];
+extern Square home[NUM_OPPONENTS][5];
  
 int load_board_map(const char *filename);
 void load_squares(FILE *file, SquareType type);

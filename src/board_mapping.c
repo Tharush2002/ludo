@@ -1,8 +1,6 @@
 #include "board_mapping.h"
 
-Square standard[52];
-Base_Squares base[4];
-Home_Squares home[4];
+Square standard[52], base[NUM_OPPONENTS][4], home[NUM_OPPONENTS][5];
 
 int load_board_map(const char *filename) {
 	FILE *file = fopen(filename, "r");
@@ -18,7 +16,7 @@ int load_board_map(const char *filename) {
 
 void load_squares(FILE *file, SquareType type){
 	char line[256], colour[10];
-	int index, x, y, i;	
+	int index, x, y;	
 
 	bypass_lines_until(file, line, type);
 
@@ -35,38 +33,34 @@ void load_squares(FILE *file, SquareType type){
 			case HOME:				
 				if (sscanf(line, "%[^,],%d,%d,%d\n",colour, &index, &x, &y) != 4) break;		
 				if(strcmp(colour, "RED") == 0){
-					i=0;
-					home[i].colour = COLOUR_RED;
+					home[COLOUR_RED][index].x = x;
+					home[COLOUR_RED][index].y = y;
 				}else if(strcmp(colour, "BLUE") == 0){	
-					i=1;
-					home[i].colour = COLOUR_BLUE;
-				}else if(strcmp(colour, "GREEN") == 0){
-					i=2;
-					home[i].colour = COLOUR_GREEN;
-				}else if(strcmp(colour, "YELLOW") == 0){	
-					i=3;
-					home[i].colour = COLOUR_YELLOW;
+					home[COLOUR_BLUE][index].x = x;
+					home[COLOUR_BLUE][index].y = y;
+				}else if(strcmp(colour, "GREEN") == 0){	
+					home[COLOUR_GREEN][index].x = x;
+					home[COLOUR_GREEN][index].y = y;
+				}else if(strcmp(colour, "YELLOW") == 0){		
+					home[COLOUR_YELLOW][index].x = x;
+					home[COLOUR_YELLOW][index].y = y;
 				}	
-				home[i].square[index].x = x;
-				home[i].square[index].y = y;
 				break;
 			case BASE:	
 				if (sscanf(line, "%[^,],%d,%d,%d\n",colour, &index, &x, &y) != 4) break;		
 				if(strcmp(colour, "RED") == 0){
-					i=0;
-					base[i].colour = COLOUR_RED;
+					base[COLOUR_RED][index].x = x;
+					base[COLOUR_RED][index].y = y;
 				}else if(strcmp(colour, "BLUE") == 0){	
-					i=1;
-					base[i].colour = COLOUR_BLUE;
+					base[COLOUR_BLUE][index].x = x;
+					base[COLOUR_BLUE][index].y = y;
 				}else if(strcmp(colour, "GREEN") == 0){
-					i=2;
-					base[i].colour = COLOUR_GREEN;
+					base[COLOUR_GREEN][index].x = x;
+					base[COLOUR_GREEN][index].y = y;
 				}else if(strcmp(colour, "YELLOW") == 0){	
-					i=3;
-					base[i].colour = COLOUR_YELLOW;
+					base[COLOUR_YELLOW][index].x = x;
+					base[COLOUR_YELLOW][index].y = y;
 				}	
-				base[i].square[index].x = x;
-				base[i].square[index].y = y;
 		}
-    	}
+	}
 }

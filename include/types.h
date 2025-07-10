@@ -1,11 +1,6 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-//#include "raylib.h"
-
-//#define SQUARE_SIZE 62
-//#define PIECE_SCALE 0.8f
-//#define PIECE_TARGET_SIZE (SQUARE_SIZE * PIECE_SCALE)
 #define NUM_STANDARD_SQUARES 52
 #define NUM_BASE_SQUARES 4
 #define NUM_HOME_SQUARES 5
@@ -22,10 +17,11 @@ typedef struct{
 } Square;
 
 typedef struct {
-	Square *square; 
+	SquareType location_type;
+	int index;
 	float current_x, current_y;
 	PieceStatus status;
-    	Colour colour;
+    Colour colour;
 } Piece;
 
 #endif

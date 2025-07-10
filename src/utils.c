@@ -37,8 +37,8 @@ void log_mappings(){
 	printf("================================================\n");
 
 	for(size_t i=0 ; i<sizeof(home)/sizeof(home[0]) ; i++){
-		for(size_t j=0 ; j<sizeof(home[i].square)/sizeof(home[i].square[0]) ; j++){
-			printf("colour - %s\tx - %d\ty - %d\n",get_colour(home[i].colour), home[i].square[j].x, home[i].square[j].y);
+		for(size_t j=0 ; j<sizeof(home[0])/sizeof(home[0][0]) ; j++){
+			printf("colour - %s\tx - %d\ty - %d\n",get_colour(i), home[i][j].x, home[i][j].y);
 		}
 	}	
 	
@@ -47,14 +47,25 @@ void log_mappings(){
 	printf("================================================\n");
 
 	for(size_t i=0 ; i<sizeof(base)/sizeof(base[0]) ; i++){
-		for(size_t j=0 ; j<sizeof(base[i].square)/sizeof(base[i].square[0]) ; j++){
-			printf("colour - %s\tx - %d\ty - %d\n",get_colour(base[i].colour), base[i].square[j].x, base[i].square[j].y);
+		for(size_t j=0 ; j<sizeof(base[0])/sizeof(base[0][0]) ; j++){
+			printf("colour - %s\tx - %d\ty - %d\n",get_colour(i), base[i][j].x, base[i][j].y);
 		}
 	}
 }
 
 void update_piece_position(Piece *piece, float speed) {
-	Square target = *piece->square;
+	Square target;
+	switch(piece->location_type){
+		case STANDARD:
+			target = standard[piece->index];
+			break;
+		case HOME:
+			target = home[piece->colour][piece->index];
+			break;
+		case BASE:
+			target = base[piece->colour][piece->index];
+			break;
+	}
 	if (fabsf(piece->current_x - target.x) > speed){
 		piece->current_x += (piece->current_x < target.x) ? speed : -speed;
 	}else{
