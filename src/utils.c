@@ -23,6 +23,10 @@ const char* get_square_type(SquareType type){
 	}
 }
 
+int roll_dice(){
+	return rand() % 6 + 1;
+}
+
 void log_mappings(){	
 	printf("================================================\n");
 	printf("=====================STANDARD===================\n");
