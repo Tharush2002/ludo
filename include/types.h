@@ -8,9 +8,25 @@
 #define NUM_OPPONENTS 4
 #define MOVE_SPEED 8.0f
 
-typedef enum {STANDARD,HOME,BASE} SquareType;
-typedef enum {COLOUR_RED,COLOUR_BLUE,COLOUR_GREEN,COLOUR_YELLOW} Colour;
-typedef enum {PIECE_STANDARD,PIECE_HOME,PIECE_BASE,PIECE_FINISHED} PieceStatus;
+typedef enum {
+	STANDARD=0,
+	HOME=1,
+	BASE=2
+} SquareType;
+
+typedef enum {
+	COLOUR_RED=0,
+	COLOUR_BLUE=1,
+	COLOUR_GREEN=2,
+	COLOUR_YELLOW=3
+} Colour;
+
+typedef enum {
+	PIECE_STANDARD=0,
+	PIECE_HOME=1,
+	PIECE_BASE=2,
+	PIECE_FINISHED=3
+} PieceStatus;
 
 typedef struct{
 	int index, x, y;
@@ -21,8 +37,7 @@ typedef struct {
 	int index;
 	float current_x, current_y;
 	PieceStatus status;
-    Colour colour;
+	Colour colour;
 } Piece;
 
 #endif
-
