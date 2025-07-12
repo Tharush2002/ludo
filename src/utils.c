@@ -23,9 +23,50 @@ const char* get_square_type(SquareType type){
 	}
 }
 
-int roll_dice(){
-	return rand() % 6 + 1;
+int get_approach(Colour colour){
+	switch(colour){
+		case COLOUR_RED: return RED_APPROACH;
+		case COLOUR_BLUE: return BLUE_APPROACH;
+		case COLOUR_GREEN: return GREEN_APPROACH;
+		case COLOUR_YELLOW: return YELLOW_APPROACH;
+		default: 	
+			assert(0 && "Unhandled colour to get an approach index");
+			return -1;
+	}
 }
+
+int get_start(Colour colour){
+	switch(colour){
+		case COLOUR_RED: return RED_START;
+		case COLOUR_BLUE: return BLUE_START;
+		case COLOUR_GREEN: return GREEN_START;
+		case COLOUR_YELLOW: return YELLOW_START;
+		default: 	
+			assert(0 && "Unhandled colour to get an start index");
+			return -1;
+	}
+}
+
+int get_random_num(int num){
+	return rand() % num + 1;
+}
+
+int get_clockwise_distance_between_pieces(int from, int to) {
+    return (to - from + 52) % 52;
+}
+
+int is_approach_passed(Piece *selected_piece){
+	int current = selected_piece->index, destination = (current + game.dice)%52, approach = get_approach(game.player);
+	
+	if (current <= approach && destination > approach) {
+    		return 1;
+	} else if (current > approach && (destination > approach || destination < current)) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
 
 void log_mappings(){	
 	printf("================================================\n");
