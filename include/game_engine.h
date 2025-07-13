@@ -6,24 +6,12 @@
 #include "utils.h"
 
 extern Piece pieces[NUM_OPPONENTS][NUM_PIECES];
-
-typedef struct {
-	Piece (*pieces)[NUM_OPPONENTS][NUM_PIECES];
-	Colour player;  
-	int dice;
-	int turn_count;
-} GameState;
-
-typedef struct {
-	int piece_index, from_index, to_index, score, can_move;
-	PieceStatus from_status, to_status;
-} Move;
-
 extern GameState game;
 
 void init_game();
 Move decide_move();
-//int execute_move();
+void set_player_order();
+int move_piece();
 
 int score_progress_toward_home(Move *move);
 int score_reaching_center(Move *move);
