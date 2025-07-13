@@ -8,6 +8,15 @@
 #define NUM_OPPONENTS 4
 #define MOVE_SPEED 8.0f
 
+#define RED_APPROACH 24
+#define RED_START 26
+#define BLUE_APPROACH 11
+#define BLUE_START 13
+#define GREEN_APPROACH 37
+#define GREEN_START 39
+#define YELLOW_APPROACH 50
+#define YELLOW_START 0
+
 typedef enum {
 	STANDARD=0,
 	HOME=1,
@@ -33,11 +42,28 @@ typedef struct{
 } Square;
 
 typedef struct {
-	SquareType location_type;
 	int index;
 	float current_x, current_y;
 	PieceStatus status;
 	Colour colour;
 } Piece;
+
+typedef struct {
+         Piece (*pieces)[NUM_OPPONENTS][NUM_PIECES];
+         Colour player;
+         int dice;
+         int turn_count;
+} GameState;
+ 
+typedef struct {
+         int piece_index, from_index, to_index, score, can_move;
+         PieceStatus from_status, to_status;
+} Move;
+ 
+typedef struct {
+         int roll;
+         Colour player;
+} PlayerRoll;
+
 
 #endif
