@@ -2,20 +2,22 @@
 
 Piece pieces[NUM_OPPONENTS][NUM_PIECES];
 GameState game;
+int player_order[NUM_PIECES] = {0};
 
 //Initialize the game by mapping the pieces into bases
 void init_game(){
+	set_player_order();
 	for(int i = 0 ; i < NUM_OPPONENTS ; i++){
 		for(int j = 0 ; j < NUM_PIECES ; j++){
-			pieces[i][j].location_type = BASE;
 			pieces[i][j].index = j;
 			pieces[i][j].current_x = base[i][j].x;
 			pieces[i][j].current_y = base[i][j].y; 
-			pieces[i][j].status = PIECE_HOME;
+			pieces[i][j].status = PIECE_BASE;
 			pieces[i][j].colour = i;
 		}
 	}
 	game.pieces = &pieces;
+	game.turn_count = 0;
 }
 
 //Decides the best possible move currently
@@ -37,11 +39,11 @@ Move decide_move(){
 	}
 
 	for(int i=0 ; i<NUM_PIECES-1 ; i++){
-		if(moves[i].score > moves [i+1].score) best_move = moves[i];
+		if(moves[i].score > moves [i+1].score && moves[i].can_move) best_move = moves[i];
 	}
 	
 	for(int i=0 ; i<NUM_PIECES ; i++){
-		if(best_move.score == moves[i].score){
+		if(best_move.score == moves[i].score && moves[i].can_move){
 			moves_with_same_scores[same_count] = i;
 			same_count++;
 		}
@@ -49,16 +51,70 @@ Move decide_move(){
 
 	if(same_count==1){
 		return best_move;
-	}else{
+	}else if(same_count>1){
 		int random = get_random_num(same_count);
 		return moves[moves_with_same_scores[random-1]];
+	}else{
+		Move no_valid_move = {.can_move=0};
+		return no_valid_move;
 	}
 
 }
 
-/*int execute_move(){
+//Set the playing order
+void set_player_order(){
+	PlayerRoll order[NUM_PIECES];
+	int is_rolls_unique = 0;
 
-}*/
+	for(int i=0 ; i<NUM_PIECES ; i++){
+		order[i].roll = get_random_num(6);
+		order[i].player = (Colour)i;
+	}
+
+	while(!is_rolls_unique){
+		is_rolls_unique = 1;
+		for(int i=0 ; i<NUM_PIECES ; i++){
+			for(int j=0 ; j<NUM_PIECES ; j++){
+				if(i==j) continue;
+				if(order[i].roll == order[j].roll){
+					is_rolls_unique = 0;
+					order[i].roll = get_random_num(6);
+					order[j].roll = get_random_num(6);
+					break;
+				}
+			}		
+			if(!is_rolls_unique) break;	
+		}
+	}
+
+	for (int i = 0; i < NUM_OPPONENTS - 1; i++) {
+		for (int j = 1; j < NUM_OPPONENTS - i; j++) {
+		        if (order[i].roll > order[j].roll) {
+				PlayerRoll temp = order[j];
+				order[j] = order[i];
+				order[i] = temp;
+        		}
+    		}
+	}
+
+	for(int i=0 ; i<NUM_PIECES ; i++){
+		player_order[i] = order[i].player;
+	}
+}
+
+//Move a piece according to its best move
+int move_piece(){
+	Move best_move = decide_move();
+	if(best_move.can_move){
+		(*game.pieces)[game.player][best_move.piece_index].index = best_move.to_index;
+		(*game.pieces)[game.player][best_move.piece_index].status = best_move.to_status;
+		game.turn_count++;			
+		return 1;
+	}else{
+		game.turn_count++;
+		return 0;
+	}	
+}
 
 //Score system for the possible moves
 int score_progress_toward_home(Move *move){
