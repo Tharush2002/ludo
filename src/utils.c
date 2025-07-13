@@ -100,16 +100,19 @@ void log_mappings(){
 
 void update_piece_position(Piece *piece, float speed) {
 	Square target;
-	switch(piece->location_type){
-		case STANDARD:
+	switch(piece->status){
+		case PIECE_STANDARD:
 			target = standard[piece->index];
 			break;
-		case HOME:
+		case PIECE_HOME:
 			target = home[piece->colour][piece->index];
 			break;
-		case BASE:
+		case PIECE_BASE:
 			target = base[piece->colour][piece->index];
 			break;
+		default:
+			assert(0 && "Unhandled piece status in update_piece_position");
+			return;
 	}
 	if (fabsf(piece->current_x - target.x) > speed){
 		piece->current_x += (piece->current_x < target.x) ? speed : -speed;
