@@ -58,13 +58,13 @@ int get_clockwise_distance_between_pieces(int from, int to) {
 int is_approach_passed(Piece *selected_piece){
 	int current = selected_piece->index, destination = (current + game.dice)%52, approach = get_approach(game.player);
 	
-	if (current <= approach && destination > approach) {
-    		return 1;
-	} else if (current > approach && (destination > approach || destination < current)) {
-		return 1;
-	} else {
-		return 0;
-	}
+	if (current < destination) {
+        	if (approach > current && approach <= destination) return 1;
+        
+    	}else if (current > destination) {
+        	if (approach > current || approach <= destination) return 1;
+        }
+	return 0;
 }
 
 
@@ -101,7 +101,7 @@ void log_mappings(){
 void update_piece_position(Piece *piece, float speed) {
 	Square target;
 	switch(piece->status){
-		case PIECE_STANDARD:
+		/*case PIECE_STANDARD:
 			target = standard[piece->index];
 			break;
 		case PIECE_HOME:
@@ -109,11 +109,30 @@ void update_piece_position(Piece *piece, float speed) {
 			break;
 		case PIECE_BASE:
 			target = base[piece->colour][piece->index];
+			break;*/
+	
+		case PIECE_STANDARD:
+			piece->current_x = standard[piece->index].x;
+			piece->current_y = standard[piece->index].y;
+			target = standard[piece->index];
+			break;
+		case PIECE_HOME:
+			piece->current_x = home[piece->colour][piece->index].x;
+			piece->current_y = home[piece->colour][piece->index].y;
+			target = home[piece->colour][piece->index];
+			break;
+		case PIECE_BASE:
+			piece->current_x = base[piece->colour][piece->index].x;
+			piece->current_y = base[piece->colour][piece->index].y;
+			target = base[piece->colour][piece->index];
 			break;
 		default:
 			assert(0 && "Unhandled piece status in update_piece_position");
 			return;
 	}
+
+	
+
 	if (fabsf(piece->current_x - target.x) > speed){
 		piece->current_x += (piece->current_x < target.x) ? speed : -speed;
 	}else{
@@ -138,7 +157,29 @@ void bypass_lines_until(FILE *file, char *line, SquareType type){
 	fgets(line, sizeof(line), file);
 }
 
-/*const char* get_piece_status(PieceStatus status){
+void print_pieces(Piece *p){
+	printf("=====================\n");
+	printf("Index - %d\n",p->index);
+	printf("Piece Status - %s\n",get_piece_status(p->status));
+	printf("Current X - %f\n",p->current_x);
+	printf("Current Y - %f\n",p->current_y);
+	printf("Colour - %s\n",get_colour(p->colour));
+	printf("=====================\n");
+}
+
+void print_move(Move *m){
+	printf("======================\n");
+	printf("Piece Index - %d\n",m->piece_index);
+	printf("From Index - %d\n",m->from_index);
+	printf("To Index - %d\n",m->to_index);
+	printf("Score - %d\n",m->score);
+	printf("Can move - %s\n",m->can_move==1 ? "TRUE":"FALSE");
+	printf("From Status - %s\n",get_piece_status(m->from_status));
+	printf("To Status - %s\n",get_piece_status(m->to_status));
+	printf("======================\n");
+}
+
+const char* get_piece_status(PieceStatus status){
 	switch(status){
 		case PIECE_STANDARD: return "PIECE_STANDARD";
 		case PIECE_HOME: return "PIECE_HOME";
@@ -148,6 +189,6 @@ void bypass_lines_until(FILE *file, char *line, SquareType type){
 			assert(0 && "Unhandled piece status in get_piece_status");
 			return "UNKNOWN";
 	}
-}*/
+}
 
 

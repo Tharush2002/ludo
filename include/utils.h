@@ -20,7 +20,8 @@ int is_approach_passed(Piece *selected_piece);
 void log_mappings();
 void update_piece_position(Piece *piece, float speed);
 void bypass_lines_until(FILE *file, char *line, SquareType type);
-
-//const char* get_piece_status(PieceStatus status);
+void print_pieces(Piece *p);
+void print_move(Move *m);
+const char* get_piece_status(PieceStatus status);
 
 #endif
