@@ -11,7 +11,7 @@ extern GameState game;
 void init_game();
 Move decide_move();
 void set_player_order();
-int move_piece();
+void move_piece();
 
 int score_progress_toward_home(Move *move);
 int score_reaching_center(Move *move);

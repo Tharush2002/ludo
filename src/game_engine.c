@@ -18,6 +18,7 @@ void init_game(){
 	}
 	game.pieces = &pieces;
 	game.turn_count = 0;
+	game.player = player_order[game.turn_count%4];
 }
 
 //Decides the best possible move currently
@@ -35,11 +36,13 @@ Move decide_move(){
 			moves[i].score += score_safety(&moves[i]);
 			moves[i].score += score_enter_from_base(&moves[i]);
 			moves[i].score += score_moving_to_danger(&moves[i]);
-		} 
+		}
 	}
 
 	for(int i=0 ; i<NUM_PIECES-1 ; i++){
-		if(moves[i].score > moves [i+1].score && moves[i].can_move) best_move = moves[i];
+		if(moves[i].score >= moves [i+1].score && moves[i].can_move){
+			best_move = moves[i];			
+		}		
 	}
 	
 	for(int i=0 ; i<NUM_PIECES ; i++){
@@ -53,7 +56,8 @@ Move decide_move(){
 		return best_move;
 	}else if(same_count>1){
 		int random = get_random_num(same_count);
-		return moves[moves_with_same_scores[random-1]];
+		Move move = moves[moves_with_same_scores[random-1]];
+		return move;
 	}else{
 		Move no_valid_move = {.can_move=0};
 		return no_valid_move;
@@ -99,21 +103,22 @@ void set_player_order(){
 
 	for(int i=0 ; i<NUM_PIECES ; i++){
 		player_order[i] = order[i].player;
+		printf("%d - %s\n",i+1,get_colour(order[i].player));
 	}
 }
 
 //Move a piece according to its best move
-int move_piece(){
+void move_piece(){
+	game.player = player_order[game.turn_count%4];
 	Move best_move = decide_move();
+
 	if(best_move.can_move){
 		(*game.pieces)[game.player][best_move.piece_index].index = best_move.to_index;
 		(*game.pieces)[game.player][best_move.piece_index].status = best_move.to_status;
-		game.turn_count++;			
-		return 1;
-	}else{
-		game.turn_count++;
-		return 0;
-	}	
+		update_piece_position(&(*game.pieces)[game.player][best_move.piece_index], MOVE_SPEED);
+	}
+
+	game.turn_count++;
 }
 
 //Score system for the possible moves
@@ -170,8 +175,9 @@ int score_moving_to_danger(Move *move){
 	for(int i=0 ; i<NUM_OPPONENTS ; i++){
 		if(game.player == (Colour)i) continue;
 		for(int j=0 ; j<NUM_PIECES ; j++){
-			int approach_attacker = get_approach(game.pieces[i][j]->colour);
-			int distance = get_clockwise_distance_between_pieces(game.pieces[i][j]->index, move->to_index);
+			
+			int approach_attacker = get_approach((*game.pieces)[i][j].colour);
+			int distance = get_clockwise_distance_between_pieces((*game.pieces)[i][j].index, move->to_index);
 			
 			if(approach_attacker == move->to_index) return -10;
 
@@ -179,7 +185,7 @@ int score_moving_to_danger(Move *move){
         			return 0;
 			}
 
-			int steps_to_approach = (approach_attacker - game.pieces[i][j]->index + NUM_STANDARD_SQUARES) % NUM_STANDARD_SQUARES;
+			int steps_to_approach = (approach_attacker - (*game.pieces)[i][j].index + NUM_STANDARD_SQUARES) % NUM_STANDARD_SQUARES;
 			if (distance > steps_to_approach) {
 			        return 0;
 			}
@@ -198,13 +204,14 @@ void generate_possible_moves(Move *moves, Piece *movable_pieces){
 		moves[i].score = 0;
 		
 		switch(movable_pieces[i].status){
-			case PIECE_STANDARD:
+			case PIECE_STANDARD:				
 				moves[i].from_status = PIECE_STANDARD;
 				
 				moves[i].to_index = (moves[i].from_index + game.dice)%52;
 				moves[i].to_status = is_approach_passed(&movable_pieces[i]) == 1 ? PIECE_HOME : PIECE_STANDARD;
-				
-				moves[i].can_move = is_valid_move(&moves[i]);
+					
+				moves[i].can_move = is_valid_move(&moves[i]);		
+
 				break;	
 			case PIECE_HOME:
 				moves[i].from_status = PIECE_HOME;
@@ -244,24 +251,23 @@ void generate_possible_moves(Move *moves, Piece *movable_pieces){
 
 //Checks the validity of the current move
 int is_valid_move(Move *move){
+	int count = 0;
 	switch(move->to_status){
 		case PIECE_STANDARD:
 			for(int i=0 ; i < NUM_PIECES ; i++){
-				if(move->piece_index == game.pieces[game.player][i]->index) continue;
-				if(move->to_index == game.pieces[game.player][i]->index) return 0;
+				if(move->to_status == (*game.pieces)[game.player][i].status && move->to_index == (*game.pieces)[game.player][i].index) count++;
 			}
-			return 1;
+			return count > 1 ? 0 : 1;
 
 		case PIECE_HOME:
 			if(move->to_index > NUM_HOME_SQUARES){
 				return 0;
 			}
 			for(int i=0 ; i < NUM_PIECES ; i++){
-				if(move->piece_index == game.pieces[game.player][i]->index) continue;
-				if((game.pieces[game.player][i]->status == PIECE_HOME) && (move->to_index >= game.pieces[game.player][i]->index)) return 0;
+				if(((*game.pieces)[game.player][i].status == PIECE_HOME) && (move->to_index >= (*game.pieces)[game.player][i].index)) count++;
 			}
 			if(move->to_index == NUM_HOME_SQUARES) move->to_status = PIECE_FINISHED;
-			return 1;		
+			return count > 1 ? 0 : 1;		
 
 		default:			
 			switch(move->from_status){
@@ -272,12 +278,11 @@ int is_valid_move(Move *move){
 								return 0;
 						}
 						move->to_status = PIECE_STANDARD;
+						
 						return 1;
 					}else{
 						return 0;
 					}
-					break;
-
 				case PIECE_FINISHED: return 0;		
 				default: return 0;
 			}
