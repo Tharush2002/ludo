@@ -19,6 +19,7 @@ int main(void) {
 	init_game();
 	log_mappings();	
 	init_gui();
+	render_game(game.pieces);
 
 	while (!should_close_window()) {
 		/*if (IsKeyPressed(KEY_RIGHT)){
@@ -44,11 +45,10 @@ int main(void) {
                                 
                 move_piece();
 		
-		//sleep(5);
+		sleep(2);
                 //printf("%d - %s",piece->index,get_colour(piece->colour));
                 //update_piece_position(piece, MOVE_SPEED);
-        	render_game(pieces);
-		sleep(2);
+		render_game(game.pieces);
 	}
 
 	cleanup_gui();
