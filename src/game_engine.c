@@ -1,6 +1,6 @@
 #include "game_engine.h"
 
-Piece pieces[NUM_OPPONENTS][NUM_PIECES];
+//Piece pieces[NUM_OPPONENTS][NUM_PIECES];
 GameState game;
 int player_order[NUM_PIECES] = {0};
 
@@ -9,14 +9,13 @@ void init_game(){
 	set_player_order();
 	for(int i = 0 ; i < NUM_OPPONENTS ; i++){
 		for(int j = 0 ; j < NUM_PIECES ; j++){
-			pieces[i][j].index = j;
-			pieces[i][j].current_x = base[i][j].x;
-			pieces[i][j].current_y = base[i][j].y; 
-			pieces[i][j].status = PIECE_BASE;
-			pieces[i][j].colour = i;
+			game.pieces[i][j].index = j;
+			game.pieces[i][j].current_x = base[i][j].x;
+			game.pieces[i][j].current_y = base[i][j].y; 
+			game.pieces[i][j].status = PIECE_BASE;
+			game.pieces[i][j].colour = i;
 		}
 	}
-	game.pieces = &pieces;
 	game.turn_count = 0;
 	game.player = player_order[game.turn_count%4];
 }
@@ -26,8 +25,15 @@ Move decide_move(){
 	Move moves[NUM_PIECES], best_move;
 	int moves_with_same_scores[NUM_PIECES], same_count=0;
 
-	generate_possible_moves(moves, (*game.pieces)[game.player]);		
-
+	generate_possible_moves(moves, game.pieces[game.player]);		
+	
+	/*if(game.player==3){
+		for(int i=0;i<NUM_PIECES;i++){
+			print_move(&moves[i]); 
+		}
+		printf("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
+	}*/
+	
 	for(int i=0 ; i<NUM_PIECES ; i++){
 		if(moves[i].can_move){
 			moves[i].score += score_progress_toward_home(&moves[i]);
@@ -91,7 +97,7 @@ void set_player_order(){
 		}
 	}
 
-	for (int i = 0; i < NUM_OPPONENTS - 1; i++) {
+	/*for (int i = 0; i < NUM_OPPONENTS - 1; i++) {
 		for (int j = 1; j < NUM_OPPONENTS - i; j++) {
 		        if (order[i].roll > order[j].roll) {
 				PlayerRoll temp = order[j];
@@ -99,6 +105,16 @@ void set_player_order(){
 				order[i] = temp;
         		}
     		}
+	}*/
+
+	for(int i=0;i<NUM_OPPONENTS;i++){
+		for(int j=0;j<NUM_OPPONENTS-i-1;j++){
+			if(order[j].roll > order[j+1].roll){
+				PlayerRoll temp = order[j];
+				order[j] = order[j+1];
+				order[j+1] = temp;
+			}
+		}
 	}
 
 	for(int i=0 ; i<NUM_PIECES ; i++){
@@ -109,16 +125,25 @@ void set_player_order(){
 
 //Move a piece according to its best move
 void move_piece(){
+//	game.turn_count++;
+
 	game.player = player_order[game.turn_count%4];
+//	printf("\nGame player ===================================== %s\n",get_colour(game.player));
 	Move best_move = decide_move();
 
-	if(best_move.can_move){
-		(*game.pieces)[game.player][best_move.piece_index].index = best_move.to_index;
-		(*game.pieces)[game.player][best_move.piece_index].status = best_move.to_status;
-		update_piece_position(&(*game.pieces)[game.player][best_move.piece_index], MOVE_SPEED);
-	}
+//	print_move(&best_move);
 
+	if(best_move.can_move){
+		game.pieces[game.player][best_move.piece_index].index = best_move.to_index;
+		game.pieces[game.player][best_move.piece_index].status = best_move.to_status;
+		update_piece_position(&game.pieces[game.player][best_move.piece_index], MOVE_SPEED);
+	}else{
+		printf("\n\n\n==================================================================== Turn Skipped\n\n");
+		print_move(&best_move);
+		sleep(20);
+	}
 	game.turn_count++;
+//	printf("\nGame turn count ==================================== %d\n",game.turn_count);
 }
 
 //Score system for the possible moves
@@ -146,7 +171,7 @@ int score_capture_opponent(Move *move){
 	for(int i=0 ; i<NUM_OPPONENTS ; i++){
 		if(game.player == (Colour)i) continue;
 		for(int j=0 ; j<NUM_PIECES ; j++){
-			if(move->to_index == (*game.pieces)[i][j].index) return 20;
+			if(move->to_index == game.pieces[i][j].index) return 20;
 		}
 	}
 	return 0;
@@ -176,8 +201,8 @@ int score_moving_to_danger(Move *move){
 		if(game.player == (Colour)i) continue;
 		for(int j=0 ; j<NUM_PIECES ; j++){
 			
-			int approach_attacker = get_approach((*game.pieces)[i][j].colour);
-			int distance = get_clockwise_distance_between_pieces((*game.pieces)[i][j].index, move->to_index);
+			int approach_attacker = get_approach(game.pieces[i][j].colour);
+			int distance = get_clockwise_distance_between_pieces(game.pieces[i][j].index, move->to_index);
 			
 			if(approach_attacker == move->to_index) return -10;
 
@@ -185,7 +210,7 @@ int score_moving_to_danger(Move *move){
         			return 0;
 			}
 
-			int steps_to_approach = (approach_attacker - (*game.pieces)[i][j].index + NUM_STANDARD_SQUARES) % NUM_STANDARD_SQUARES;
+			int steps_to_approach = (approach_attacker - game.pieces[i][j].index + NUM_STANDARD_SQUARES) % NUM_STANDARD_SQUARES;
 			if (distance > steps_to_approach) {
 			        return 0;
 			}
@@ -209,9 +234,14 @@ void generate_possible_moves(Move *moves, Piece *movable_pieces){
 				
 				moves[i].to_index = (moves[i].from_index + game.dice)%52;
 				moves[i].to_status = is_approach_passed(&movable_pieces[i]) == 1 ? PIECE_HOME : PIECE_STANDARD;
-					
-				moves[i].can_move = is_valid_move(&moves[i]);		
+				
 
+				/*if(game.player == 3){
+					print_move(&moves[i]);
+				}*/
+	
+				moves[i].can_move = is_valid_move(&moves[i]);		
+				
 				break;	
 			case PIECE_HOME:
 				moves[i].from_status = PIECE_HOME;
@@ -238,8 +268,8 @@ void generate_possible_moves(Move *moves, Piece *movable_pieces){
 						moves[i].to_index = YELLOW_START;
 						break;
 				}
-			
 				moves[i].can_move = is_valid_move(&moves[i]);
+
 				break;
 			case PIECE_FINISHED:
 				moves[i].from_status = PIECE_FINISHED;
@@ -251,30 +281,33 @@ void generate_possible_moves(Move *moves, Piece *movable_pieces){
 
 //Checks the validity of the current move
 int is_valid_move(Move *move){
-	int count = 0;
+//	int count = 0;
 	switch(move->to_status){
 		case PIECE_STANDARD:
 			for(int i=0 ; i < NUM_PIECES ; i++){
-				if(move->to_status == (*game.pieces)[game.player][i].status && move->to_index == (*game.pieces)[game.player][i].index) count++;
+				if(move->piece_index == i) continue;
+				if((move->to_status == game.pieces[game.player][i].status) && (move->to_index == game.pieces[game.player][i].index)) return 0;
 			}
-			return count > 1 ? 0 : 1;
+			return 1;
 
 		case PIECE_HOME:
 			if(move->to_index > NUM_HOME_SQUARES){
 				return 0;
 			}
 			for(int i=0 ; i < NUM_PIECES ; i++){
-				if(((*game.pieces)[game.player][i].status == PIECE_HOME) && (move->to_index >= (*game.pieces)[game.player][i].index)) count++;
+				if(move->piece_index == i) continue;
+				if((game.pieces[game.player][i].status == PIECE_HOME) && (move->to_index >= game.pieces[game.player][i].index)) return 0;
 			}
 			if(move->to_index == NUM_HOME_SQUARES) move->to_status = PIECE_FINISHED;
-			return count > 1 ? 0 : 1;		
+			return 1;		
 
 		default:			
 			switch(move->from_status){
 				case PIECE_BASE:
 					if(game.dice == 6){
 						for(int i=0 ; i<NUM_PIECES ; i++){
-							if((*game.pieces)[game.player][i].index == get_start(game.player))
+							if (move->piece_index==i) continue;
+							if(game.pieces[game.player][i].index == get_start(game.player))
 								return 0;
 						}
 						move->to_status = PIECE_STANDARD;
