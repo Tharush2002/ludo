@@ -4,8 +4,9 @@
 #include "types.h"
 #include "board_mapping.h"
 #include "utils.h"
+#include <unistd.h>
 
-extern Piece pieces[NUM_OPPONENTS][NUM_PIECES];
+//extern Piece pieces[NUM_OPPONENTS][NUM_PIECES];
 extern GameState game;
 
 void init_game();
