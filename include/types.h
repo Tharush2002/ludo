@@ -49,7 +49,7 @@ typedef struct {
 } Piece;
 
 typedef struct {
-         Piece (*pieces)[NUM_OPPONENTS][NUM_PIECES];
+         Piece pieces[NUM_OPPONENTS][NUM_PIECES];
          Colour player;
          int dice;
          int turn_count;
