@@ -40,8 +40,8 @@ int main(void) {
 		}*/
 		//update_piece_position(&g1, MOVE_SPEED);
 		//render_game(pieces);
-		//game.dice = get_random_num(6);
-		game.dice = 6;
+		game.dice = get_random_num(6);
+		//game.dice = 6;
                                 
                 move_piece();
 		
