@@ -1,7 +1,7 @@
 #include "game_engine.h"
 
 //Piece pieces[NUM_OPPONENTS][NUM_PIECES];
-GameState game;
+GameState game = {.dice=0};
 int player_order[NUM_PIECES] = {0};
 
 //Initialize the game by mapping the pieces into bases
@@ -139,6 +139,7 @@ void move_piece(){
 		update_piece_position(&game.pieces[game.player][best_move.piece_index], MOVE_SPEED);
 	}else{
 		printf("\n\n\n==================================================================== Turn Skipped\n\n");
+		printf("===========================================dice value - %d",game.dice);
 		print_move(&best_move);
 		sleep(20);
 	}
