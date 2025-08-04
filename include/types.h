@@ -39,6 +39,7 @@ typedef enum {
 
 typedef struct{
 	int index, x, y;
+	SquareType type;
 } Square;
 
 typedef struct {
@@ -46,6 +47,7 @@ typedef struct {
 	float current_x, current_y;
 	PieceStatus status;
 	Colour colour;
+	int is_moving;
 } Piece;
 
 typedef struct {
