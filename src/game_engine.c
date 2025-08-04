@@ -25,14 +25,7 @@ Move decide_move(){
 	Move moves[NUM_PIECES], best_move;
 	int moves_with_same_scores[NUM_PIECES], same_count=0;
 
-	generate_possible_moves(moves, game.pieces[game.player]);		
-	
-	/*if(game.player==3){
-		for(int i=0;i<NUM_PIECES;i++){
-			print_move(&moves[i]); 
-		}
-		printf("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");
-	}*/
+	generate_possible_moves(moves, game.pieces[game.player]);			
 	
 	for(int i=0 ; i<NUM_PIECES ; i++){
 		if(moves[i].can_move){
@@ -97,16 +90,6 @@ void set_player_order(){
 		}
 	}
 
-	/*for (int i = 0; i < NUM_OPPONENTS - 1; i++) {
-		for (int j = 1; j < NUM_OPPONENTS - i; j++) {
-		        if (order[i].roll > order[j].roll) {
-				PlayerRoll temp = order[j];
-				order[j] = order[i];
-				order[i] = temp;
-        		}
-    		}
-	}*/
-
 	for(int i=0;i<NUM_OPPONENTS;i++){
 		for(int j=0;j<NUM_OPPONENTS-i-1;j++){
 			if(order[j].roll > order[j+1].roll){
@@ -125,26 +108,20 @@ void set_player_order(){
 
 //Move a piece according to its best move
 void move_piece(){
-//	game.turn_count++;
-
 	game.player = player_order[game.turn_count%4];
-//	printf("\nGame player ===================================== %s\n",get_colour(game.player));
 	Move best_move = decide_move();
+	
 
-//	print_move(&best_move);
+	//print_move(&best_move);
+
 
 	if(best_move.can_move){
-		game.pieces[game.player][best_move.piece_index].index = best_move.to_index;
-		game.pieces[game.player][best_move.piece_index].status = best_move.to_status;
-		update_piece_position(&game.pieces[game.player][best_move.piece_index], MOVE_SPEED);
-	}else{
-		printf("\n\n\n==================================================================== Turn Skipped\n\n");
-		printf("===========================================dice value - %d",game.dice);
-		print_move(&best_move);
-		sleep(20);
+	        Piece *piece = &game.pieces[game.player][best_move.piece_index];
+        
+                piece->index = best_move.to_index;
+                piece->status = best_move.to_status;
 	}
 	game.turn_count++;
-//	printf("\nGame turn count ==================================== %d\n",game.turn_count);
 }
 
 //Score system for the possible moves
@@ -203,7 +180,7 @@ int score_moving_to_danger(Move *move){
 		for(int j=0 ; j<NUM_PIECES ; j++){
 			
 			int approach_attacker = get_approach(game.pieces[i][j].colour);
-			int distance = get_clockwise_distance_between_pieces(game.pieces[i][j].index, move->to_index);
+			int distance = get_distance_standard(game.pieces[i][j].index, move->to_index);
 			
 			if(approach_attacker == move->to_index) return -10;
 
@@ -227,62 +204,39 @@ void generate_possible_moves(Move *moves, Piece *movable_pieces){
 	for(int i=0 ; i<NUM_PIECES ; i++){
 		moves[i].piece_index = i;
 		moves[i].from_index = movable_pieces[i].index;
+		moves[i].from_status = movable_pieces[i].status;
 		moves[i].score = 0;
-		
-		switch(movable_pieces[i].status){
-			case PIECE_STANDARD:				
-				moves[i].from_status = PIECE_STANDARD;
-				
-				moves[i].to_index = (moves[i].from_index + game.dice)%52;
-				moves[i].to_status = is_approach_passed(&movable_pieces[i]) == 1 ? PIECE_HOME : PIECE_STANDARD;
-				
-
-				/*if(game.player == 3){
-					print_move(&moves[i]);
-				}*/
 	
-				moves[i].can_move = is_valid_move(&moves[i]);		
-				
-				break;	
-			case PIECE_HOME:
-				moves[i].from_status = PIECE_HOME;
+		Square destination = get_destination(&movable_pieces[i], game.dice);
+		moves[i].to_index = destination.index;
+		
+		printf("dice is %d and %s - %d\n", game.dice, get_colour(movable_pieces[i].colour), destination.index);
+		
+
+		switch(destination.type){
+			case STANDARD:
+				moves[i].to_status = PIECE_STANDARD;
+				break;
+			case HOME:
 				moves[i].to_status = PIECE_HOME;
-
-				moves[i].to_index = moves[i].from_index + game.dice;	
-				moves[i].can_move = is_valid_move(&moves[i]);
 				break;
-			case PIECE_BASE:
-				moves[i].from_status = PIECE_BASE;
+			case BASE:	
 				moves[i].to_status = PIECE_BASE;
-
-				switch(game.player){
-					case COLOUR_RED:
-						moves[i].to_index = RED_START;
-						break;
-					case COLOUR_BLUE:
-						moves[i].to_index = BLUE_START;
-						break;
-					case COLOUR_GREEN:
-						moves[i].to_index = GREEN_START;
-						break;
-					case COLOUR_YELLOW:
-						moves[i].to_index = YELLOW_START;
-						break;
-				}
-				moves[i].can_move = is_valid_move(&moves[i]);
-
-				break;
-			case PIECE_FINISHED:
-				moves[i].from_status = PIECE_FINISHED;
-				moves[i].to_status = PIECE_FINISHED;	
-				moves[i].can_move = is_valid_move(&moves[i]);
 		}
+		
+		if(destination.x == 0 && destination.y == 0 && destination.type == 0 && destination.index == 0){
+			moves[i].can_move = 0;
+		}else{
+			moves[i].can_move = is_valid_move(&moves[i]);
+		}
+
+		//print_move(&moves[i]);
 	}
 }
 
 //Checks the validity of the current move
 int is_valid_move(Move *move){
-//	int count = 0;
+	
 	switch(move->to_status){
 		case PIECE_STANDARD:
 			for(int i=0 ; i < NUM_PIECES ; i++){
@@ -302,23 +256,14 @@ int is_valid_move(Move *move){
 			if(move->to_index == NUM_HOME_SQUARES) move->to_status = PIECE_FINISHED;
 			return 1;		
 
-		default:			
-			switch(move->from_status){
-				case PIECE_BASE:
-					if(game.dice == 6){
-						for(int i=0 ; i<NUM_PIECES ; i++){
-							if (move->piece_index==i) continue;
-							if(game.pieces[game.player][i].index == get_start(game.player))
-								return 0;
-						}
-						move->to_status = PIECE_STANDARD;
-						
-						return 1;
-					}else{
-						return 0;
-					}
-				case PIECE_FINISHED: return 0;		
-				default: return 0;
-			}
+		case PIECE_BASE:
+			for(int i=0 ; i<NUM_PIECES ; i++){
+				if (move->piece_index==i) continue;
+				if(game.pieces[game.player][i].index == get_start(game.player))
+					return 0;
+			}			
+			return 1;
+		case PIECE_FINISHED: return 0;			
+		default: return 0;
 	}
 }
