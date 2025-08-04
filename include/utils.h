@@ -15,12 +15,15 @@ const char* get_square_type(SquareType type);
 int get_approach(Colour colour);
 int get_start(Colour colour);
 int get_random_num(int num);
-int get_clockwise_distance_between_pieces(int from, int to);
-int is_approach_passed(Piece *selected_piece);
-void log_mappings();
-void update_piece_position(Piece *piece, float speed);
+int get_distance_standard(int from, int to);
+int is_approach_passed(Piece *selected_piece, int steps);
+Square get_destination(Piece *piece, int steps);
+int update_piece_position(Piece *piece, float speed);
+int any_piece_moving();
+
 void bypass_lines_until(FILE *file, char *line, SquareType type);
-void print_pieces(Piece *p);
+void log_mappings();
+void print_piece(Piece *p);
 void print_move(Move *m);
 const char* get_piece_status(PieceStatus status);
 
