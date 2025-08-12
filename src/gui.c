@@ -47,8 +47,8 @@ void render_game(Piece (*pieces)[NUM_PIECES]) {
 		for(int j = 0 ; j < NUM_PIECES ; j++){
 			DrawTexture(
 				piece_texture, 
-				(int)pieces[i][j].current_x - piece_texture.width / 2, 
-				(int)pieces[i][j].current_y - piece_texture.height / 2, 
+				(int)pieces[i][j].current_square.x - piece_texture.width / 2, 
+				(int)pieces[i][j].current_square.y - piece_texture.height / 2, 
 				WHITE
 			);
 			//print_pieces(&pieces[i][j]);
