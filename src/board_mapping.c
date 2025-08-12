@@ -1,6 +1,6 @@
 #include "board_mapping.h"
 
-Square standard[52], base[NUM_OPPONENTS][4], home[NUM_OPPONENTS][5];
+Square standard[NUM_STANDARD_SQUARES], base[NUM_OPPONENTS][NUM_BASE_SQUARES], home[NUM_OPPONENTS][NUM_HOME_SQUARES], center[NUM_OPPONENTS][NUM_CENTER_SQUARES];
 
 int load_board_map(const char *filename) {
 	FILE *file = fopen(filename, "r");
@@ -78,7 +78,31 @@ void load_squares(FILE *file, SquareType type){
 					base[COLOUR_YELLOW][i].x = x;
 					base[COLOUR_YELLOW][i].y = y;
 					base[COLOUR_YELLOW][i].type = BASE;
-				}	
+				}
+				break;
+			case CENTER:					
+				if (sscanf(line, "%[^,],%d,%d,%d\n",colour, &i, &x, &y) != 4) break;		
+				if(strcmp(colour, "RED") == 0){
+				        center[COLOUR_RED][i].index = i;
+					center[COLOUR_RED][i].x = x;
+					center[COLOUR_RED][i].y = y;	
+					center[COLOUR_RED][i].type = CENTER;
+				}else if(strcmp(colour, "BLUE") == 0){	
+				        center[COLOUR_BLUE][i].index = i;
+					center[COLOUR_BLUE][i].x = x;
+					center[COLOUR_BLUE][i].y = y;
+					center[COLOUR_BLUE][i].type = CENTER;
+				}else if(strcmp(colour, "GREEN") == 0){
+				        center[COLOUR_GREEN][i].index = i;
+					center[COLOUR_GREEN][i].x = x;
+					center[COLOUR_GREEN][i].y = y;
+					center[COLOUR_GREEN][i].type = CENTER;
+				}else if(strcmp(colour, "YELLOW") == 0){
+				        center[COLOUR_YELLOW][i].index = i;
+					center[COLOUR_YELLOW][i].x = x;
+					center[COLOUR_YELLOW][i].y = y;
+					center[COLOUR_YELLOW][i].type = CENTER;
+				}
 		}
 	}
 }
