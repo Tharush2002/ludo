@@ -20,24 +20,27 @@ int main(void) {
     render_game(game.pieces);
     
     while (!should_close_window()) {
-        // Update all piece positions every frame
-        int any_moving = 0;
-        for (int i = 0; i < NUM_OPPONENTS; i++) {
-            for (int j = 0; j < NUM_PIECES ; j++) {
-                if (update_piece_position(&game.pieces[i][j], MOVE_SPEED)) {
-                    any_moving = 1;
+            // Update all piece positions every frame
+            int any_moving = 0;
+            for (int i = 0; i < NUM_OPPONENTS; i++) {
+                for (int j = 0; j < NUM_PIECES ; j++) {
+                    if (update_piece_position(&game.pieces[i][j], MOVE_SPEED)) {
+                        any_moving = 1;
+                    }
                 }
             }
-        }
-        
-        // Only make a new move when no pieces are moving
-        if (!any_moving) {
-            game.dice = get_random_num(6);
-            move_piece();
-            sleep(1); // Reduced sleep time since movement is animated
-        }
-        
-        render_game(game.pieces);
+            
+            // Only make a new move when no pieces are moving AND sufficient time has passed
+            static double last_move_time = 0;
+            double current_time = GetTime();
+            
+            if (!any_moving && (current_time - last_move_time) > 1.0) {
+                game.dice = get_random_num(6);
+                move_piece();
+                last_move_time = current_time;
+            }
+            
+            render_game(game.pieces);
     }
     cleanup_gui();
     return 0;
