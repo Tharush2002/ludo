@@ -1,6 +1,5 @@
 #include "game_engine.h"
 
-//Piece pieces[NUM_OPPONENTS][NUM_PIECES];
 GameState game = {.dice=0};
 int player_order[NUM_PIECES] = {0};
 
@@ -9,40 +8,35 @@ void init_game(){
 	set_player_order();
 	for(int i = 0 ; i < NUM_OPPONENTS ; i++){
 		for(int j = 0 ; j < NUM_PIECES ; j++){
-			game.pieces[i][j].index = j;
-			game.pieces[i][j].current_x = base[i][j].x;
-			game.pieces[i][j].current_y = base[i][j].y; 
-			game.pieces[i][j].status = PIECE_BASE;
-			game.pieces[i][j].colour = i;
+			game.pieces[i][j].current_square = base[i][j];
+			game.pieces[i][j].destination_square = base[i][j];
+			game.pieces[i][j].colour = (Colour)i;
+			game.pieces[i][j].is_moving = 0;
 		}
 	}
 	game.turn_count = 0;
-	game.player = player_order[game.turn_count%4];
+	game.player = (Colour)player_order[game.turn_count%4];
 }
 
 //Decides the best possible move currently
 Move decide_move(){
-	Move moves[NUM_PIECES], best_move;
-	int moves_with_same_scores[NUM_PIECES], same_count=0;
+	Move moves[NUM_PIECES], best_move = {.can_move=0};
+	int moves_with_same_scores[NUM_PIECES], same_count=0, best_score = -1000;
 
 	generate_possible_moves(moves, game.pieces[game.player]);			
 	
 	for(int i=0 ; i<NUM_PIECES ; i++){
 		if(moves[i].can_move){
-			moves[i].score += score_progress_toward_home(&moves[i]);
-			moves[i].score += score_reaching_center(&moves[i]);
-			moves[i].score += score_capture_opponent(&moves[i]);
-			moves[i].score += score_safety(&moves[i]);
-			moves[i].score += score_enter_from_base(&moves[i]);
-			moves[i].score += score_moving_to_danger(&moves[i]);
+			get_score(moves[i]);
 		}
 	}
-
-	for(int i=0 ; i<NUM_PIECES-1 ; i++){
-		if(moves[i].score >= moves [i+1].score && moves[i].can_move){
-			best_move = moves[i];			
-		}		
-	}
+        
+        for(int i=0 ; i<NUM_PIECES ; i++){
+                if(moves[i].can_move && moves[i].score > best_score){
+                        best_move = moves[i];
+                        best_score = moves[i].score;
+                }
+        }
 	
 	for(int i=0 ; i<NUM_PIECES ; i++){
 		if(best_move.score == moves[i].score && moves[i].can_move){
@@ -62,6 +56,17 @@ Move decide_move(){
 		return no_valid_move;
 	}
 
+}
+
+void get_score(Move move){
+        move.score += score_reaching_center(&move);           // Highest priority
+        move.score += score_capture_opponent(&move);          // High priority
+        move.score += score_clear_start_position(&move);      // High priority when needed
+        move.score += score_enter_from_base(&move);           // High priority when needed
+        move.score += score_safety(&move);                   // Medium-high priority
+        move.score += score_progress_toward_home(&move);      // Medium priority
+        move.score += score_defensive_formation(&move);       // Low priority
+        move.score += score_moving_to_danger(&move);          // Negative scoring
 }
 
 //Set the playing order
@@ -111,125 +116,184 @@ void move_piece(){
 	game.player = player_order[game.turn_count%4];
 	Move best_move = decide_move();
 	
-
 	//print_move(&best_move);
-
 
 	if(best_move.can_move){
 	        Piece *piece = &game.pieces[game.player][best_move.piece_index];
-        
-                piece->index = best_move.to_index;
-                piece->status = best_move.to_status;
+	        Square destination = get_square(best_move.to_index, best_move.to);
+	        if (!(destination.type == 0 && destination.x == 0 && destination.y == 0 && destination.index == 0)) {
+                        piece->destination_square = get_square(best_move.to_index, best_move.to);
+                        piece->is_moving=1;        
+                        //print_piece(piece);
+                }
+		
 	}
 	game.turn_count++;
 }
 
-//Score system for the possible moves
-int score_progress_toward_home(Move *move){
-	if((move->from_status == PIECE_BASE) && (move->to_status == PIECE_STANDARD)){
-		return 1;
-	}else if((move->from_status == PIECE_HOME) && (move->to_status == PIECE_FINISHED)){
-		return game.dice-1;
-	}else{
-		return game.dice;
-	}
+//Score system for clearing start position to allow base pieces to enter
+int score_clear_start_position(Move *move) {
+        int start_pos = get_start(game.player);
+        
+        // High priority: Move piece away from start position if others are in base
+        if (move->from == STANDARD && move->from_index == start_pos) {
+                // Count pieces still in base
+                int pieces_in_base = 0;
+                for (int i = 0; i < NUM_PIECES; i++) {
+                    if (game.pieces[game.player][i].current_square.type == BASE) {
+                        pieces_in_base++;
+                    }
+                }
+                
+                // The more pieces in base, the higher the priority to clear start
+                return pieces_in_base * 15; // 15, 30, 45 points based on pieces in base
+        }
+        
+        return 0;
 }
 
-//Score system for the possible moves
-int score_reaching_center(Move *move){
-	if((move->from_status == PIECE_HOME) && (move->to_status == PIECE_FINISHED)){
-		return 20;
-	}else{
-		return 0;
-	}
+//Score system for getting pieces out of base (entering board)
+int score_enter_from_base(Move *move) {
+        if (move->from == BASE && move->to == STANDARD) {
+                // Count how many pieces are still in base
+                int pieces_in_base = 0;
+                for (int i = 0; i < NUM_PIECES; i++) {
+                    if (game.pieces[game.player][i].current_square.type == BASE) {
+                        pieces_in_base++;
+                    }
+                }
+                
+                // Higher score for getting pieces out when more are stuck
+                return 10 + (pieces_in_base * 5); // 15-25 points based on base pieces
+        }
+        return 0;
 }
 
-//Score system for the possible moves
-int score_capture_opponent(Move *move){
-	for(int i=0 ; i<NUM_OPPONENTS ; i++){
-		if(game.player == (Colour)i) continue;
-		for(int j=0 ; j<NUM_PIECES ; j++){
-			if(move->to_index == game.pieces[i][j].index) return 20;
-		}
-	}
-	return 0;
+//Score system for making progress toward home
+int score_progress_toward_home(Move *move) {
+        if (move->from == BASE && move->to == STANDARD) {
+                return 5; // Basic progress from base
+        }
+        else if (move->from == STANDARD && move->to == STANDARD) {
+                // Progress on main track
+                return 3;
+        }
+        else if (move->from == STANDARD && move->to == HOME) {
+                return 8; // Entering home stretch
+        }
+        else if (move->from == HOME && move->to == HOME) {
+                return game.dice; // Progress in home based on dice value
+        }
+        else if (move->from == HOME && move->to == CENTER) {
+                return game.dice + 5; // Bonus for reaching center
+        }
+        
+        return 0;
 }
 
-//Score system for the possible moves
-int score_safety(Move *move){
-	if((move->from_status == PIECE_STANDARD) && (move->to_status == PIECE_HOME)){
-		return 5;
-	}else{
-		return 0;
-	}
+//Score system for reaching center (winning)
+int score_reaching_center(Move *move) {
+        if (move->from == HOME && move->to == CENTER) {
+                return 100; // Very high priority - this wins the piece!
+        }
+        return 0;
 }
 
-//Score system for the possible moves
-int score_enter_from_base(Move *move){
-	if(move->from_status == PIECE_BASE && move->to_status == PIECE_STANDARD){
-		return 10;
-	}else{
-		return 0;
-	}
+//Score system for capturing opponents
+int score_capture_opponent(Move *move) {
+        for (int i = 0; i < NUM_OPPONENTS; i++) {
+                if (game.player == (Colour)i) continue;
+                
+                for (int j = 0; j < NUM_PIECES; j++) {
+                        if ((move->to_index == game.pieces[i][j].current_square.index) && 
+                            (move->to == game.pieces[i][j].current_square.type) &&
+                            (move->to == STANDARD)) { // Can only capture on standard squares
+                            
+                            // Bonus for capturing pieces that are closer to home
+                            int opponent_progress = game.pieces[i][j].current_square.index;
+                            return 25 + (opponent_progress / 4); // 25-38 points based on opponent progress
+                        }
+                }
+        }
+        return 0;
 }
 
-//Score system for the possible moves
-int score_moving_to_danger(Move *move){	
-	for(int i=0 ; i<NUM_OPPONENTS ; i++){
-		if(game.player == (Colour)i) continue;
-		for(int j=0 ; j<NUM_PIECES ; j++){
-			
-			int approach_attacker = get_approach(game.pieces[i][j].colour);
-			int distance = get_distance_standard(game.pieces[i][j].index, move->to_index);
-			
-			if(approach_attacker == move->to_index) return -10;
+//Score system for safety (entering home stretch)
+int score_safety(Move *move) {
+        if (move->from == STANDARD && move->to == HOME) {
+                return 12; // High value for reaching safety
+        }
+        return 0;
+}
 
-			if (distance == 0 || distance > 6) {
-        			return 0;
-			}
+//Score system for avoiding danger
+int score_moving_to_danger(Move *move) {
+        if (move->to != STANDARD) {
+                return 0; // Only standard squares can be dangerous
+        }
+        
+        int danger_penalty = 0;
+        
+        for (int i = 0; i < NUM_OPPONENTS; i++) {
+            if (game.player == (Colour)i) continue;
+            
+            for (int j = 0; j < NUM_PIECES; j++) {
+                    if (game.pieces[i][j].current_square.type != STANDARD) continue;
+                    
+                    int opponent_pos = game.pieces[i][j].current_square.index;
+                    int distance = get_distance_standard(opponent_pos, move->to_index);
+                    
+                    // Danger zones: opponent can reach us in 1-6 moves
+                    if (distance >= 1 && distance <= 6) {
+                            // More dangerous if opponent is closer
+                            danger_penalty -= (7 - distance) * 3; // -18 to -3 points
+                            
+                            // Extra penalty if opponent is very close (1-2 moves away)
+                            if (distance <= 2) {
+                                danger_penalty -= 10;
+                            }
+                    }
+            }
+        }
+        
+        return danger_penalty;
+}
 
-			int steps_to_approach = (approach_attacker - game.pieces[i][j].index + NUM_STANDARD_SQUARES) % NUM_STANDARD_SQUARES;
-			if (distance > steps_to_approach) {
-			        return 0;
-			}
-
-			return -10;
-		}
-	}
-	return 0;
+//Score system for forming defensive positions
+int score_defensive_formation(Move *move) {
+        if (move->to != STANDARD) return 0;
+        
+        // Small bonus for keeping pieces spread out on the board
+        int pieces_on_board = 0;
+        for (int i = 0; i < NUM_PIECES; i++) {
+                if (game.pieces[game.player][i].current_square.type == STANDARD) {
+                    pieces_on_board++;
+                }
+        }
+        
+        // Encourage having multiple pieces active
+        return pieces_on_board * 2;
 }
 
 //generate the all the possible moves for the player
 void generate_possible_moves(Move *moves, Piece *movable_pieces){
 	for(int i=0 ; i<NUM_PIECES ; i++){
 		moves[i].piece_index = i;
-		moves[i].from_index = movable_pieces[i].index;
-		moves[i].from_status = movable_pieces[i].status;
+		moves[i].from_index = movable_pieces[i].current_square.index;
+		moves[i].from = movable_pieces[i].current_square.type;
 		moves[i].score = 0;
 	
 		Square destination = get_destination(&movable_pieces[i], game.dice);
-		moves[i].to_index = destination.index;
 		
 		printf("dice is %d and %s - %d\n", game.dice, get_colour(movable_pieces[i].colour), destination.index);
-		
-
-		switch(destination.type){
-			case STANDARD:
-				moves[i].to_status = PIECE_STANDARD;
-				break;
-			case HOME:
-				moves[i].to_status = PIECE_HOME;
-				break;
-			case BASE:	
-				moves[i].to_status = PIECE_BASE;
-		}
 		
 		if(destination.x == 0 && destination.y == 0 && destination.type == 0 && destination.index == 0){
 			moves[i].can_move = 0;
 		}else{
-			moves[i].can_move = is_valid_move(&moves[i]);
+		        moves[i].can_move = is_valid_move(&moves[i]);
+			moves[i].to_index = destination.index;
+		        moves[i].to = destination.type;
 		}
-
 		//print_move(&moves[i]);
 	}
 }
@@ -237,33 +301,34 @@ void generate_possible_moves(Move *moves, Piece *movable_pieces){
 //Checks the validity of the current move
 int is_valid_move(Move *move){
 	
-	switch(move->to_status){
-		case PIECE_STANDARD:
+	switch(move->from){
+		case STANDARD:
 			for(int i=0 ; i < NUM_PIECES ; i++){
-				if(move->piece_index == i) continue;
-				if((move->to_status == game.pieces[game.player][i].status) && (move->to_index == game.pieces[game.player][i].index)) return 0;
-			}
+                                if(move->piece_index == i) continue;
+                                if((move->to == game.pieces[game.player][i].current_square.type) && 
+                                   (move->to_index == game.pieces[game.player][i].current_square.index)) return 0;
+                        }
 			return 1;
 
-		case PIECE_HOME:
+		case HOME:
 			if(move->to_index > NUM_HOME_SQUARES){
 				return 0;
 			}
 			for(int i=0 ; i < NUM_PIECES ; i++){
 				if(move->piece_index == i) continue;
-				if((game.pieces[game.player][i].status == PIECE_HOME) && (move->to_index >= game.pieces[game.player][i].index)) return 0;
+				if((game.pieces[game.player][i].current_square.type == HOME) && (move->to_index >= game.pieces[game.player][i].current_square.index)) return 0;
 			}
-			if(move->to_index == NUM_HOME_SQUARES) move->to_status = PIECE_FINISHED;
+			if(move->to_index == NUM_HOME_SQUARES) move->to = CENTER;
 			return 1;		
 
-		case PIECE_BASE:
+		case BASE:
+		        if(game.dice != 6) return 0;
 			for(int i=0 ; i<NUM_PIECES ; i++){
 				if (move->piece_index==i) continue;
-				if(game.pieces[game.player][i].index == get_start(game.player))
-					return 0;
+				if(game.pieces[game.player][i].current_square.type == STANDARD && game.pieces[game.player][i].current_square.index == get_start(game.player)) return 0;
 			}			
 			return 1;
-		case PIECE_FINISHED: return 0;			
+		case CENTER: return 0;			
 		default: return 0;
 	}
 }
