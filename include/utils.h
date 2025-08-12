@@ -12,12 +12,15 @@
 
 const char* get_colour(Colour colour);
 const char* get_square_type(SquareType type);
+const char* get_piece_status(PieceStatus status);
 int get_approach(Colour colour);
 int get_start(Colour colour);
 int get_random_num(int num);
 int get_distance_standard(int from, int to);
 int is_approach_passed(Piece *selected_piece, int steps);
+Square get_square(int index, SquareType type);
 Square get_destination(Piece *piece, int steps);
+Square get_next_square_in_path(Piece *piece);
 int update_piece_position(Piece *piece, float speed);
 int any_piece_moving();
 
@@ -25,6 +28,5 @@ void bypass_lines_until(FILE *file, char *line, SquareType type);
 void log_mappings();
 void print_piece(Piece *p);
 void print_move(Move *m);
-const char* get_piece_status(PieceStatus status);
 
 #endif

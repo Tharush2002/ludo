@@ -23,6 +23,18 @@ const char* get_square_type(SquareType type){
 	}
 }
 
+const char* get_piece_status(PieceStatus status){
+	switch(status){
+		case PIECE_STANDARD: return "PIECE_STANDARD";
+		case PIECE_HOME: return "PIECE_HOME";
+		case PIECE_BASE: return "PIECE_BASE";
+		case PIECE_FINISHED: return "PIECE_FINISHED";
+		default: 
+			assert(0 && "Unhandled piece status in get_piece_status");
+			return "UNKNOWN";
+	}
+}
+
 int get_approach(Colour colour){
 	switch(colour){
 		case COLOUR_RED: return RED_APPROACH;
@@ -56,7 +68,7 @@ int get_distance_standard(int from, int to) {
 }
 
 int is_approach_passed(Piece *selected_piece, int steps){
-	int current = selected_piece->index, destination = (current + steps)%52, approach = get_approach(selected_piece->colour);
+	int current = selected_piece->current_square.index, destination = (current + steps)%52, approach = get_approach(selected_piece->colour);
 	
 	if (current < destination) {
         	if (approach > current && approach <= destination) return 1;
@@ -67,60 +79,131 @@ int is_approach_passed(Piece *selected_piece, int steps){
 	return 0;
 }
 
-Square get_destination(Piece *piece, int steps){
+Square get_square(int index, SquareType type){
 	Square empty = {0};
-	switch(piece->status){
-		case PIECE_STANDARD:
-			if(is_approach_passed(piece, game.dice)){
-				int i = get_distance_standard(piece->index, get_approach(piece->colour));
-				int j = steps - i - 1; // because home path is zero based	
-				return home[piece->colour][j];
-			}else{
-				return standard[(piece->index + steps)%52];
-			}
-		case PIECE_HOME:
-			if((piece->index + steps)<5){
-				return home[piece->colour][piece->index + steps];
-			}
-			return empty;
-		case PIECE_BASE:
-			int start = get_start(piece->colour);
-			//printf("\n\n\n\nPiece %s start is %d\n\n\n\n",get_colour(piece->colour),start);
-			return steps == 6 ? standard[start] : empty;
-		case PIECE_FINISHED:
-			return empty;
+        switch(type){
+                case STANDARD:
+                      	return standard[index]; 
+                case HOME:
+	                return home[game.player][index];
+                case BASE:
+                      	return base[game.player][index];
+		case CENTER:
+			return center[game.player][0];
 		default:
-			assert(0 && "Unhandled piece status in get_destination");
+			assert(0 && "Unhandled square type in get_square");
 			return empty;
-	}
+        }
 }
 
-int update_piece_position(Piece *piece, float speed) {
-    Square *target;
-    switch(piece->status) {
-        case PIECE_STANDARD:
-            target = &standard[piece->index];
-            break;
-        case PIECE_BASE:
-            target = &base[piece->colour][piece->index];
-            break;
-        case PIECE_HOME:
-            target = &home[piece->colour][piece->index];
-            break;
-        default:            
-            return 0; // No valid target
-    }
+Square get_destination(Piece *piece, int steps) {
+        Square square = {0};
+        
+        switch(piece->current_square.type) {
+                case STANDARD:
+                        if(is_approach_passed(piece, steps)) {
+                            int distance_to_approach = get_distance_standard(
+                                piece->current_square.index, 
+                                get_approach(piece->colour)
+                            );
+                            int remaining_steps = steps - distance_to_approach - 1;
+                            
+                            if (remaining_steps < NUM_HOME_SQUARES) {
+                                return home[piece->colour][remaining_steps];
+                                //square.type = HOME; // Ensure type is set
+                                //return square;
+                            }
+                        } else {
+                            return standard[(piece->current_square.index + steps) % NUM_STANDARD_SQUARES];
+                            //square.type = STANDARD; // Ensure type is set
+                            //return square;
+                        }
+                        break;
+                    
+                case HOME:
+                        if((piece->current_square.index + steps) < NUM_HOME_SQUARES) {
+                            return home[piece->colour][piece->current_square.index + steps];
+                            //square.type = HOME;
+                        } else if((piece->current_square.index + steps) == NUM_HOME_SQUARES) {
+                            return center[piece->colour][0];
+                            //square.type = CENTER;
+                        }
+                        return square;
+                    
+                case BASE:
+                        if (steps == 6) {
+                            int start = get_start(piece->colour);
+                            return standard[start];
+                            //square.type = STANDARD;
+                        }
+                        return square;
+                    
+                case CENTER:
+                        return square; // Cannot move from center
+                    
+                default:
+                        return square;
+        }
+        
+        return square;
+}
+
+Square get_next_square_in_path(Piece *piece) {
+        Square current = piece->current_square;
+        Square destination = piece->destination_square;
+        Square empty = {0};
+        
+        // If already at destination
+        if (current.x == destination.x && current.y == destination.y) {
+                return empty;
+        }
+        
+        // Calculate path based on current and destination types
+        if (current.type == STANDARD && destination.type == STANDARD) {
+                // Moving on standard track
+                int next_index = (current.index + 1) % NUM_STANDARD_SQUARES;
+                return standard[next_index];
+        }
+        else if (current.type == STANDARD && destination.type == HOME) {
+                // Check if we need to turn into home path
+                int approach = get_approach(piece->colour);
+                if (current.index == approach) {
+                    return home[piece->colour][0];
+                } else {
+                    int next_index = (current.index + 1) % NUM_STANDARD_SQUARES;
+                    return standard[next_index];
+                }
+        }
+        else if (current.type == HOME && destination.type == HOME) {
+                // Moving along home path
+                if (current.index + 1 < NUM_HOME_SQUARES) {
+                    return home[piece->colour][current.index + 1];
+                }
+        }
+        else if (current.type == HOME && destination.type == CENTER) {
+                // Moving to center
+                return destination;
+        }
+        else if (current.type == BASE && destination.type == STANDARD) {
+                // Moving from base to standard
+                return destination;
+        }
+        
+        return empty;
+}
+
+/*int update_piece_position(Piece *piece, float speed) {
+    Square *target = &piece->destination_square;
     
     const float epsilon = 1.0f; // When to consider "arrived"
     
     // Calculate distance to target
-    float delta_x = target->x - piece->current_x;
-    float delta_y = target->y - piece->current_y;
+    float delta_x = target->x - piece->current_square.x;
+    float delta_y = target->y - piece->current_square.y;
     
     // Check if we're close enough to target
     if (fabsf(delta_x) <= epsilon && fabsf(delta_y) <= epsilon) {
-        piece->current_x = target->x;  // Snap to exact position
-        piece->current_y = target->y;
+        piece->current_square = *target;
         piece->is_moving = 0;      // Mark as not moving
         return 0; // Movement complete
     }
@@ -129,29 +212,63 @@ int update_piece_position(Piece *piece, float speed) {
     piece->is_moving = 1;
     
     if (fabsf(delta_x) > speed) {
-        piece->current_x += (delta_x > 0) ? speed : -speed;
+        piece->current_square.x += (delta_x > 0) ? speed : -speed;
     } else {
-        piece->current_x = target->x;
+        piece->current_square.x = target->x;
     }
     
     if (fabsf(delta_y) > speed) {
-        piece->current_y += (delta_y > 0) ? speed : -speed;
+        piece->current_square.y += (delta_y > 0) ? speed : -speed;
     } else {
-        piece->current_y = target->y;
+        piece->current_square.y = target->y;
     }
     
     return 1; // Still moving
+}*/
+
+int update_piece_position(Piece *piece, float speed) {
+        const float epsilon = 1.0f;
+        
+        if (!piece->is_moving) {
+            return 0;
+        }
+        
+        // Check if we've reached the final destination
+        float delta_x = (float)piece->destination_square.x - (float)piece->current_square.x;
+        float delta_y = (float)piece->destination_square.y - (float)piece->current_square.y;
+        
+        if (fabsf(delta_x) <= epsilon && fabsf(delta_y) <= epsilon) {
+                piece->current_square = piece->destination_square;
+                piece->is_moving = 0;
+                return 0;
+        }
+        
+        
+        if (fabsf(delta_x) > speed) {
+                piece->current_square.x += (int)((delta_x > 0) ? speed : -speed);
+        } else {
+                piece->current_square.x = piece->destination_square.x;
+        }
+        
+        // Move in Y direction
+        if (fabsf(delta_y) > speed) {
+                piece->current_square.y += (int)((delta_y > 0) ? speed : -speed);
+        } else {
+                piece->current_square.y = piece->destination_square.y;
+        }
+        
+        return 1;
 }
 
 int any_piece_moving() {
-    for (int i = 0; i < NUM_OPPONENTS; i++) {
-        for (int j = 0; j < 4; j++) {
-            if (game.pieces[i][j].is_moving) {
-                return 1;
-            }
+        for (int i = 0; i < NUM_OPPONENTS; i++) {
+                for (int j = 0; j < 4; j++) {
+                        if (game.pieces[i][j].is_moving) {
+                                return 1;
+                        }
+                }
         }
-    }
-    return 0;
+        return 0;
 }
 
 void bypass_lines_until(FILE *file, char *line, SquareType type){
@@ -197,10 +314,14 @@ void log_mappings(){
 
 void print_piece(Piece *p){
 	printf("=====================\n");
-	printf("Index - %d\n",p->index);
-	printf("Piece Status - %s\n",get_piece_status(p->status));
-	printf("Current X - %f\n",p->current_x);
-	printf("Current Y - %f\n",p->current_y);
+	printf("Current Index - %d\n",p->current_square.index);
+	printf("Current Piece Status - %s\n",get_square_type(p->current_square.type));
+	printf("Current X - %d\n",p->current_square.x);
+	printf("Current Y - %d\n",p->current_square.y);
+	printf("Destination Index - %d\n",p->destination_square.index);
+	printf("Destination Piece Status - %s\n",get_square_type(p->destination_square.type));
+	printf("Destination X - %d\n",p->destination_square.x);
+	printf("Destination Y - %d\n",p->destination_square.y);
 	printf("Colour - %s\n",get_colour(p->colour));
 	printf("=====================\n");
 }
@@ -212,21 +333,9 @@ void print_move(Move *m){
 	printf("To Index - %d\n",m->to_index);
 	printf("Score - %d\n",m->score);
 	printf("Can move - %s\n",m->can_move==1 ? "TRUE":"FALSE");
-	printf("From Status - %s\n",get_piece_status(m->from_status));
-	printf("To Status - %s\n",get_piece_status(m->to_status));
+	printf("From Status - %s\n",get_square_type(m->from));
+	printf("To Status - %s\n",get_square_type(m->to));
 	printf("======================\n");
-}
-
-const char* get_piece_status(PieceStatus status){
-	switch(status){
-		case PIECE_STANDARD: return "PIECE_STANDARD";
-		case PIECE_HOME: return "PIECE_HOME";
-		case PIECE_BASE: return "PIECE_BASE";
-		case PIECE_FINISHED: return "PIECE_FINISHED";
-		default: 
-			assert(0 && "Unhandled piece status in get_piece_status");
-			return "UNKNOWN";
-	}
 }
 
 
