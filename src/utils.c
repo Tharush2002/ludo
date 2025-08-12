@@ -154,110 +154,127 @@ Square get_next_square_in_path(Piece *piece) {
         Square empty = {0};
         
         // If already at destination
-        if (current.x == destination.x && current.y == destination.y) {
+        if (current.x == destination.x && current.y == destination.y &&
+                current.index == destination.index && current.type == destination.type) {
                 return empty;
         }
         
-        // Calculate path based on current and destination types
+        // Handle different path scenarios
         if (current.type == STANDARD && destination.type == STANDARD) {
-                // Moving on standard track
-                int next_index = (current.index + 1) % NUM_STANDARD_SQUARES;
+                // Moving along standard track
+                int current_index = current.index;
+                int destination_index = destination.index;
+                
+                // Calculate next index (wrapping around if necessary)
+                int next_index = (current_index + 1) % NUM_STANDARD_SQUARES;
+                
+                // If we're going backwards or the direct path is shorter
+                int forward_distance = (destination_index - current_index + NUM_STANDARD_SQUARES) % NUM_STANDARD_SQUARES;
+                
+                if (forward_distance == 0) {
+                    return empty; // Already at destination
+                }
+                
                 return standard[next_index];
         }
         else if (current.type == STANDARD && destination.type == HOME) {
                 // Check if we need to turn into home path
                 int approach = get_approach(piece->colour);
+                
                 if (current.index == approach) {
+                    // Turn into home path
                     return home[piece->colour][0];
                 } else {
+                    // Continue on standard track toward approach
                     int next_index = (current.index + 1) % NUM_STANDARD_SQUARES;
                     return standard[next_index];
                 }
         }
         else if (current.type == HOME && destination.type == HOME) {
                 // Moving along home path
-                if (current.index + 1 < NUM_HOME_SQUARES) {
+                if (current.index + 1 <= destination.index && current.index + 1 < NUM_HOME_SQUARES) {
+                    return home[piece->colour][current.index + 1];
+                }
+                return empty;
+        }
+        else if (current.type == HOME && destination.type == CENTER) {
+                // Check if we're at the last home square
+                if (current.index == NUM_HOME_SQUARES - 1) {
+                    return destination; // Move directly to center
+                } else {
+                    // Move to next home square
                     return home[piece->colour][current.index + 1];
                 }
         }
-        else if (current.type == HOME && destination.type == CENTER) {
-                // Moving to center
-                return destination;
-        }
         else if (current.type == BASE && destination.type == STANDARD) {
-                // Moving from base to standard
+                // Moving from base directly to start position
                 return destination;
         }
         
         return empty;
 }
 
-/*int update_piece_position(Piece *piece, float speed) {
-    Square *target = &piece->destination_square;
-    
-    const float epsilon = 1.0f; // When to consider "arrived"
-    
-    // Calculate distance to target
-    float delta_x = target->x - piece->current_square.x;
-    float delta_y = target->y - piece->current_square.y;
-    
-    // Check if we're close enough to target
-    if (fabsf(delta_x) <= epsilon && fabsf(delta_y) <= epsilon) {
-        piece->current_square = *target;
-        piece->is_moving = 0;      // Mark as not moving
-        return 0; // Movement complete
-    }
-    
-    // Move towards target
-    piece->is_moving = 1;
-    
-    if (fabsf(delta_x) > speed) {
-        piece->current_square.x += (delta_x > 0) ? speed : -speed;
-    } else {
-        piece->current_square.x = target->x;
-    }
-    
-    if (fabsf(delta_y) > speed) {
-        piece->current_square.y += (delta_y > 0) ? speed : -speed;
-    } else {
-        piece->current_square.y = target->y;
-    }
-    
-    return 1; // Still moving
-}*/
-
 int update_piece_position(Piece *piece, float speed) {
         const float epsilon = 1.0f;
         
+        // If piece is not marked as moving, don't update position
         if (!piece->is_moving) {
-            return 0;
+                return 0;
         }
         
         // Check if we've reached the final destination
-        float delta_x = (float)piece->destination_square.x - (float)piece->current_square.x;
-        float delta_y = (float)piece->destination_square.y - (float)piece->current_square.y;
+        if (piece->current_square.x == piece->destination_square.x && 
+                piece->current_square.y == piece->destination_square.y &&
+                piece->current_square.index == piece->destination_square.index &&
+                piece->current_square.type == piece->destination_square.type) {
+                piece->is_moving = 0;
+                return 0; // Movement complete
+        }
         
-        if (fabsf(delta_x) <= epsilon && fabsf(delta_y) <= epsilon) {
-                piece->current_square = piece->destination_square;
+        // Get the next square in the path
+        Square next_square = get_next_square_in_path(piece);
+        
+        // If no valid next square, stop movement
+        if (next_square.type == 0 && next_square.x == 0 && next_square.y == 0) {
                 piece->is_moving = 0;
                 return 0;
         }
         
+        // Calculate distance to next square (not final destination)
+        float delta_x = (float)next_square.x - (float)piece->current_square.x;
+        float delta_y = (float)next_square.y - (float)piece->current_square.y;
         
+        // Check if we've reached this intermediate square
+        if (fabsf(delta_x) <= epsilon && fabsf(delta_y) <= epsilon) {
+                // Move to the next square
+                piece->current_square = next_square;
+                
+                // Check if this was our final destination
+                if (next_square.x == piece->destination_square.x && 
+                    next_square.y == piece->destination_square.y &&
+                    next_square.index == piece->destination_square.index &&
+                    next_square.type == piece->destination_square.type) {
+                    piece->is_moving = 0;
+                    return 0; // Reached final destination
+                }
+                
+                return 1; // Continue moving to next square
+        }
+        
+        // Move towards the next square
         if (fabsf(delta_x) > speed) {
                 piece->current_square.x += (int)((delta_x > 0) ? speed : -speed);
         } else {
-                piece->current_square.x = piece->destination_square.x;
+                piece->current_square.x = next_square.x;
         }
         
-        // Move in Y direction
         if (fabsf(delta_y) > speed) {
                 piece->current_square.y += (int)((delta_y > 0) ? speed : -speed);
         } else {
-                piece->current_square.y = piece->destination_square.y;
+                piece->current_square.y = next_square.y;
         }
         
-        return 1;
+        return 1; // Still moving
 }
 
 int any_piece_moving() {
