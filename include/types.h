@@ -4,6 +4,7 @@
 #define NUM_STANDARD_SQUARES 52
 #define NUM_BASE_SQUARES 4
 #define NUM_HOME_SQUARES 5
+#define NUM_CENTER_SQUARES 1
 #define NUM_PIECES 4
 #define NUM_OPPONENTS 4
 #define MOVE_SPEED 8.0f
@@ -20,7 +21,8 @@
 typedef enum {
 	STANDARD=0,
 	HOME=1,
-	BASE=2
+	BASE=2,
+	CENTER=3
 } SquareType;
 
 typedef enum {
@@ -43,9 +45,9 @@ typedef struct{
 } Square;
 
 typedef struct {
-	int index;
-	float current_x, current_y;
-	PieceStatus status;
+	//int new_index, index;
+	//float current_x, current_y;
+	Square current_square, destination_square;
 	Colour colour;
 	int is_moving;
 } Piece;
@@ -59,7 +61,7 @@ typedef struct {
  
 typedef struct {
          int piece_index, from_index, to_index, score, can_move;
-         PieceStatus from_status, to_status;
+         SquareType from, to;
 } Move;
  
 typedef struct {
