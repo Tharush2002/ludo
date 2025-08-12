@@ -9,6 +9,7 @@
 extern Square standard[NUM_STANDARD_SQUARES];
 extern Square base[NUM_OPPONENTS][NUM_BASE_SQUARES];
 extern Square home[NUM_OPPONENTS][NUM_HOME_SQUARES];
+extern Square center[NUM_OPPONENTS][NUM_CENTER_SQUARES];
  
 int load_board_map(const char *filename);
 void load_squares(FILE *file, SquareType type);
