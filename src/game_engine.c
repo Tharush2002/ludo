@@ -14,7 +14,7 @@ void init_game(){
 			game.pieces[i][j].is_moving = 0;
 		}
 	}
-	game.turn_count = 0;
+	game.turn_count = game.six_rolls = 0;
 	game.player = (Colour)player_order[game.turn_count%4];
 }
 
@@ -116,6 +116,7 @@ void move_piece(){
 	game.player = player_order[game.turn_count%4];
 	Move best_move = decide_move();
 	
+	if(game.dice == 6) game.six_rolls++;
 	//print_move(&best_move);
 
 	if(best_move.can_move){
@@ -128,7 +129,10 @@ void move_piece(){
                 }
 		
 	}
-	game.turn_count++;
+	if(game.dice != 6 || (game.dice == 6 && game.six_rolls > 3)){
+		game.six_rolls = 0;
+		game.turn_count++;
+	}
 }
 
 //Score system for clearing start position to allow base pieces to enter
@@ -285,7 +289,7 @@ void generate_possible_moves(Move *moves, Piece *movable_pieces){
 	
 		Square destination = get_destination(&movable_pieces[i], game.dice);
 		
-		printf("dice is %d and %s - %d\n", game.dice, get_colour(movable_pieces[i].colour), destination.index);
+		//printf("dice is %d and %s - %d\n", game.dice, get_colour(movable_pieces[i].colour), destination.index);
 		
 		if(destination.x == 0 && destination.y == 0 && destination.type == 0 && destination.index == 0){
 			moves[i].can_move = 0;
@@ -305,8 +309,16 @@ int is_valid_move(Move *move){
 		case STANDARD:
 			for(int i=0 ; i < NUM_PIECES ; i++){
                                 if(move->piece_index == i) continue;
+				printf("Move is to %s\n", get_colour(game.player));
+				printf(move->to == game.pieces[game.player][i].current_square.type ? "\t1st Condition True\n":"\t1st Condition False\n");
+				printf(move->to_index == game.pieces[game.player][i].current_square.index ? "\t2nd Condition True\n":"\t2nd Condition False\n");
+				printf("===============================================\n\n");
                                 if((move->to == game.pieces[game.player][i].current_square.type) && 
-                                   (move->to_index == game.pieces[game.player][i].current_square.index)) return 0;
+                                  (move->to_index == game.pieces[game.player][i].current_square.index)){ 
+					printf("\n\n\n\n\n??????????????????????\n");
+					print_move(move);
+					return 0;
+				}
                         }
 			return 1;
 
