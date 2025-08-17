@@ -32,7 +32,7 @@ void render_game(Piece (*pieces)[NUM_PIECES]) {
 	ClearBackground(RAYWHITE);
 	DrawTexture(board_texture, 0, 0, WHITE);
 
-	if(game.dice!=0){
+	if(game.dice!=0 && game.show_dice){
 		Texture2D dice = get_dice(game.dice);
 		DrawTexture(
 			dice,
