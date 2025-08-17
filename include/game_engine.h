@@ -8,12 +8,14 @@
 
 //extern Piece pieces[NUM_OPPONENTS][NUM_PIECES];
 extern GameState game;
+extern Move best_move;
 
 void init_game();
 Move decide_move();
 void get_score(Move move);
 void set_player_order();
 void move_piece();
+void check_captures(Square *destination);
 
 int score_clear_start_position(Move *move);
 int score_enter_from_base(Move *move);

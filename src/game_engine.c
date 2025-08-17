@@ -1,6 +1,8 @@
 #include "game_engine.h"
 
 GameState game = {.dice=0};
+Move best_move = {0};
+
 int player_order[NUM_PIECES] = {0};
 
 //Initialize the game by mapping the pieces into bases
@@ -114,7 +116,7 @@ void set_player_order(){
 //Move a piece according to its best move
 void move_piece(){
 	game.player = player_order[game.turn_count%4];
-	Move best_move = decide_move();
+	best_move = decide_move();
 	
 	if(game.dice == 6) game.six_rolls++;
 	//print_move(&best_move);
@@ -126,12 +128,32 @@ void move_piece(){
                         piece->destination_square = get_square(best_move.to_index, best_move.to);
                         piece->is_moving=1;        
                         //print_piece(piece);
+			check_captures(&destination);	
                 }
 		
 	}
+
 	if(game.dice != 6 || (game.dice == 6 && game.six_rolls > 3)){
 		game.six_rolls = 0;
 		game.turn_count++;
+	}
+}
+
+void check_captures(Square *destination){
+	for(int i=0 ; i<NUM_OPPONENTS ; i++){
+		if ((Colour)i==game.player) continue;
+		for(int j=0 ; j<NUM_PIECES ; j++){
+			Piece *temp = &game.pieces[i][j]; 
+			if(destination->index == temp->current_square.index && destination->type == temp->current_square.type){
+				for(int k=0 ; k<NUM_PIECES ; k++){
+					if((game.pieces[temp->colour][k].current_square.type == BASE) && (base[temp->colour][k].index == game.pieces[temp->colour][k].current_square.index)) continue;
+					temp->destination_square = base[temp->colour][k];
+					best_move.capture_available = 1;
+					best_move.captured = temp;
+					return;
+				}
+			}
+		}
 	}
 }
 
@@ -210,12 +232,12 @@ int score_capture_opponent(Move *move) {
                 
                 for (int j = 0; j < NUM_PIECES; j++) {
                         if ((move->to_index == game.pieces[i][j].current_square.index) && 
-                            (move->to == game.pieces[i][j].current_square.type) &&
-                            (move->to == STANDARD)) { // Can only capture on standard squares
-                            
-                            // Bonus for capturing pieces that are closer to home
-                            int opponent_progress = game.pieces[i][j].current_square.index;
-                            return 25 + (opponent_progress / 4); // 25-38 points based on opponent progress
+                            	(move->to == game.pieces[i][j].current_square.type) &&
+	                	(move->to == STANDARD)) { // Can only capture on standard squares
+
+                            	// Bonus for capturing pieces that are closer to home
+                            	int opponent_progress = game.pieces[i][j].current_square.index;
+                            	return 25 + (opponent_progress / 4); // 25-38 points based on opponent progress
                         }
                 }
         }
@@ -282,10 +304,13 @@ int score_defensive_formation(Move *move) {
 //generate the all the possible moves for the player
 void generate_possible_moves(Move *moves, Piece *movable_pieces){
 	for(int i=0 ; i<NUM_PIECES ; i++){
+
 		moves[i].piece_index = i;
 		moves[i].from_index = movable_pieces[i].current_square.index;
 		moves[i].from = movable_pieces[i].current_square.type;
 		moves[i].score = 0;
+		moves[i].capture_available = 0;
+		moves[i].captured = NULL;
 	
 		Square destination = get_destination(&movable_pieces[i], game.dice);
 		
