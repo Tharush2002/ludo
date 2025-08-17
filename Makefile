@@ -2,7 +2,7 @@
 CC = gcc
 
 # Compiler flags
-CFLAGS = -Iinclude -Wall -Wextra -std=c99
+CFLAGS = -Iinclude -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=200112L -D_DEFAULT_SOURCE
 
 # Source files
 SRC = src/main.c src/gui.c src/board_mapping.c src/utils.c src/game_engine.c
@@ -22,4 +22,3 @@ $(OUT): $(SRC)
 # Clean up
 clean:
 	rm -f $(OUT)
-
