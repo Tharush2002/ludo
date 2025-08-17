@@ -45,15 +45,23 @@ void render_game(Piece (*pieces)[NUM_PIECES]) {
 	for (int i = 0; i < NUM_OPPONENTS ; i++) {
 		Texture2D piece_texture = get_texture(pieces[i][0].colour);
 		for(int j = 0 ; j < NUM_PIECES ; j++){
-			DrawTexture(
-				piece_texture, 
-				(int)pieces[i][j].current_square.x - piece_texture.width / 2, 
-				(int)pieces[i][j].current_square.y - piece_texture.height / 2, 
-				WHITE
-			);
-			//print_pieces(&pieces[i][j]);
+			if(!pieces[i][j].is_finished){
+				DrawTexture(
+					piece_texture, 
+					(int)pieces[i][j].current_square.x - piece_texture.width / 2, 
+					(int)pieces[i][j].current_square.y - piece_texture.height / 2, 
+					WHITE
+				);
+			}
 		}
     	}
+
+	if (game.game_over) {
+		DrawText("GAME OVER!", 350, 100, 50, BLACK);
+		const char* winner_text = TextFormat("%s WINS!", get_colour(game.winner));
+		DrawText(winner_text, 300, 160, 40, BLACK);
+		DrawText("Press ESC to exit", 380, 220, 20, BLACK);
+	}
 	
 	EndDrawing();
 }

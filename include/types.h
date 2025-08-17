@@ -25,6 +25,12 @@ typedef enum {
 	CENTER=3
 } SquareType;
 
+typedef enum{
+	READY = 0,
+	SHOW = 1,
+	MOVE = 2
+} DicePhase;
+
 typedef enum {
 	COLOUR_RED=0,
 	COLOUR_BLUE=1,
@@ -40,14 +46,16 @@ typedef struct{
 typedef struct {
 	Square current_square, destination_square;
 	Colour colour;
-	int is_moving;
+	int is_moving, is_finished;
+	double finish_time;
 } Piece;
 
 typedef struct {
         Piece pieces[NUM_OPPONENTS][NUM_PIECES];
-        Colour player;
-	int dice, turn_count, six_rolls, show_dice, dice_phase;
-	double dice_show_time;    // When dice was shown
+        Colour player, winner;
+	int dice, turn_count, six_rolls, show_dice, game_over;
+	DicePhase dice_phase;
+	double dice_show_time; 	
 } GameState;
  
 typedef struct {

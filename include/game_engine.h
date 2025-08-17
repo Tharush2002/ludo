@@ -5,12 +5,14 @@
 #include "board_mapping.h"
 #include "utils.h"
 #include <unistd.h>
+#include <raylib.h>
 
-//extern Piece pieces[NUM_OPPONENTS][NUM_PIECES];
 extern GameState game;
 extern Move best_move;
 
 void init_game();
+int check_winner();
+void update_finished_pieces();
 Move decide_move();
 void get_score(Move move);
 void set_player_order();

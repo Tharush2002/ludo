@@ -14,6 +14,8 @@ void init_game(){
 			game.pieces[i][j].destination_square = base[i][j];
 			game.pieces[i][j].colour = (Colour)i;
 			game.pieces[i][j].is_moving = 0;
+			game.pieces[i][j].is_finished = 0;
+			game.pieces[i][j].finish_time = 0.0;
 		}
 	}
 	game.turn_count = game.six_rolls = 0;
@@ -22,6 +24,51 @@ void init_game(){
 	game.show_dice = 0;
     	game.dice_show_time = 0;
 	game.dice_phase = 0;
+	game.game_over = 0;
+	game.winner = COLOUR_RED;
+}
+
+int check_winner() {
+	if (game.game_over) return 1; // Already won
+	
+	for (int i = 0; i < NUM_OPPONENTS; i++) {
+		int finished_pieces = 0;
+		for (int j = 0; j < NUM_PIECES; j++) {
+			if (game.pieces[i][j].is_finished) {
+				finished_pieces++;
+			}
+		}
+		if (finished_pieces == NUM_PIECES) {
+			game.game_over = 1;
+			game.winner = (Colour)i;
+			printf("\n🎉 GAME OVER! %s WINS! 🎉\n", get_colour((Colour)i));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+//Update finished pieces (remove them after staying in center for 2 seconds)
+void update_finished_pieces() {
+	double current_time = GetTime();
+	
+	for (int i = 0; i < NUM_OPPONENTS; i++) {
+		for (int j = 0; j < NUM_PIECES; j++) {
+			Piece *piece = &game.pieces[i][j];
+			
+			// If piece just reached center, mark finish time
+			if (piece->current_square.type == CENTER && !piece->is_finished && piece->finish_time == 0.0) {
+				piece->finish_time = current_time;
+			}
+			
+			// If piece has been in center for 2 seconds, mark as finished
+			if (piece->current_square.type == CENTER && !piece->is_finished && 
+			    piece->finish_time > 0.0 && (current_time - piece->finish_time) >= 2.0) {
+				piece->is_finished = 1;
+				printf("🏁 %s piece %d has finished the game!\n", get_colour(piece->colour), j+1);
+			}
+		}
+	}
 }
 
 //Decides the best possible move currently
@@ -120,11 +167,9 @@ void set_player_order(){
 //Move a piece according to its best move
 void move_piece(){
 	game.player = player_order[game.turn_count%4];
-	//printf("Move is to %s\n",get_colour(game.player));
 	best_move = decide_move();
 	
 	if(game.dice == 6) game.six_rolls++;
-	//print_move(&best_move);
 
 	if(best_move.can_move){
 	        Piece *piece = &game.pieces[game.player][best_move.piece_index];
@@ -132,12 +177,11 @@ void move_piece(){
 	        if (!(destination.type == 0 && destination.x == 0 && destination.y == 0 && destination.index == 0)) {
                         piece->destination_square = get_square(best_move.to_index, best_move.to);
                         piece->is_moving=1;        
-                        //print_piece(piece);
 			check_captures(&destination);	
                 }
 		
 	}else{
-		printf("MOVE PASSED\n======================\n");
+		printf("MOVE PASSED\n");
 	}
 
 	if(game.dice != 6 || (game.dice == 6 && game.six_rolls > 3)){
@@ -236,7 +280,7 @@ int score_progress_toward_home(Move *move) {
 //Score system for reaching center (winning)
 int score_reaching_center(Move *move) {
         if (move->from == HOME && move->to == CENTER) {
-                return 100; // Very high priority - this wins the piece!
+                return 150; // Very high priority - this wins the piece!
         }
         return 0;
 }
@@ -330,8 +374,6 @@ void generate_possible_moves(Move *moves, Piece *movable_pieces){
 	
 		Square destination = get_destination(&movable_pieces[i], game.dice);
 		
-		//printf("dice is %d and %s - %d\n", game.dice, get_colour(movable_pieces[i].colour), destination.index);
-		
 		if(destination.x == 0 && destination.y == 0 && destination.type == 0 && destination.index == 0){
 			moves[i].can_move = 0;
 		}else{
@@ -339,7 +381,6 @@ void generate_possible_moves(Move *moves, Piece *movable_pieces){
 		        moves[i].to = destination.type;
 		        moves[i].can_move = is_valid_move(&moves[i]);
 		}
-		//print_move(&moves[i]);
 	}
 }
 
@@ -367,7 +408,7 @@ int is_valid_move(Move *move){
 				if((game.pieces[game.player][i].current_square.type == HOME) 
 					&& (move->from_index <= game.pieces[game.player][i].current_square.index)
 					&& (move->to_index >= game.pieces[game.player][i].current_square.index))
-					 return 0;
+					return 0;
 			}
 			return 1;		
 
@@ -375,7 +416,9 @@ int is_valid_move(Move *move){
 		        if(game.dice != 6) return 0;
 			for(int i=0 ; i<NUM_PIECES ; i++){
 				if (move->piece_index==i) continue;
-				if(game.pieces[game.player][i].current_square.type == STANDARD && game.pieces[game.player][i].current_square.index == get_start(game.player)) return 0;
+				if(game.pieces[game.player][i].current_square.type == STANDARD 
+				        && game.pieces[game.player][i].current_square.index == get_start(game.player)) 
+				        return 0;
 			}			
 			return 1;
 		case CENTER: return 0;			
