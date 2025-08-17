@@ -18,6 +18,10 @@ void init_game(){
 	}
 	game.turn_count = game.six_rolls = 0;
 	game.player = (Colour)player_order[game.turn_count%4];
+	
+	game.show_dice = 0;
+    	game.dice_show_time = 0;
+	game.dice_phase = 0;
 }
 
 //Decides the best possible move currently
@@ -116,6 +120,7 @@ void set_player_order(){
 //Move a piece according to its best move
 void move_piece(){
 	game.player = player_order[game.turn_count%4];
+	//printf("Move is to %s\n",get_colour(game.player));
 	best_move = decide_move();
 	
 	if(game.dice == 6) game.six_rolls++;
@@ -131,6 +136,8 @@ void move_piece(){
 			check_captures(&destination);	
                 }
 		
+	}else{
+		printf("MOVE PASSED\n======================\n");
 	}
 
 	if(game.dice != 6 || (game.dice == 6 && game.six_rolls > 3)){
@@ -145,12 +152,21 @@ void check_captures(Square *destination){
 		for(int j=0 ; j<NUM_PIECES ; j++){
 			Piece *temp = &game.pieces[i][j]; 
 			if(destination->index == temp->current_square.index && destination->type == temp->current_square.type){
-				for(int k=0 ; k<NUM_PIECES ; k++){
-					if((game.pieces[temp->colour][k].current_square.type == BASE) && (base[temp->colour][k].index == game.pieces[temp->colour][k].current_square.index)) continue;
-					temp->destination_square = base[temp->colour][k];
-					best_move.capture_available = 1;
-					best_move.captured = temp;
-					return;
+				for(int k=0 ; k<NUM_BASE_SQUARES ; k++){
+					int base_occupied = 0;
+					for(int l=0 ; l<NUM_PIECES; l++){
+						if(game.pieces[temp->colour][l].current_square.type == BASE && 
+							game.pieces[temp->colour][l].current_square.index == k){
+							base_occupied = 1;
+							break;
+						}	
+					}
+					if(!base_occupied){
+						temp->destination_square = base[temp->colour][k];
+						best_move.capture_available = 1;
+						best_move.captured = temp;
+					        return;
+					}
 				}
 			}
 		}
@@ -334,28 +350,25 @@ int is_valid_move(Move *move){
 		case STANDARD:
 			for(int i=0 ; i < NUM_PIECES ; i++){
                                 if(move->piece_index == i) continue;
-				printf("Move is to %s\n", get_colour(game.player));
-				printf(move->to == STANDARD ? "\t1st Condition True\n":"\t1st Condition False\n");
-				printf(move->to_index == game.pieces[game.player][i].current_square.index ? "\t2nd Condition True\n":"\t2nd Condition False\n");
-				printf("===============================================\n\n");
-                                if((move->to == STANDARD) && 
+
+                                if((game.pieces[game.player][i].current_square.type == move->to) && 
                                   (move->to_index == game.pieces[game.player][i].current_square.index)){ 
-					printf("\n\n\n\n\n??????????????????????\n");
-					print_move(move);
 					return 0;
 				}
                         }
 			return 1;
 
 		case HOME:
-			if(move->to_index > NUM_HOME_SQUARES){
+			if(move->to_index != 0 && move->to != CENTER){
 				return 0;
 			}
 			for(int i=0 ; i < NUM_PIECES ; i++){
 				if(move->piece_index == i) continue;
-				if((game.pieces[game.player][i].current_square.type == HOME) && (move->to_index >= game.pieces[game.player][i].current_square.index)) return 0;
+				if((game.pieces[game.player][i].current_square.type == HOME) 
+					&& (move->from_index <= game.pieces[game.player][i].current_square.index)
+					&& (move->to_index >= game.pieces[game.player][i].current_square.index))
+					 return 0;
 			}
-			if(move->to_index == NUM_HOME_SQUARES) move->to = CENTER;
 			return 1;		
 
 		case BASE:
