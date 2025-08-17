@@ -121,14 +121,15 @@ Square get_destination(Piece *piece, int steps) {
                         break;
                     
                 case HOME:
-                        if((piece->current_square.index + steps) < NUM_HOME_SQUARES) {
+                        if((piece->current_square.index + 1 + steps) < NUM_HOME_SQUARES) {
                             return home[piece->colour][piece->current_square.index + steps];
                             //square.type = HOME;
-                        } else if((piece->current_square.index + steps) == NUM_HOME_SQUARES) {
+                        } else if((piece->current_square.index + 1 + steps) == NUM_HOME_SQUARES) {
                             return center[piece->colour][0];
                             //square.type = CENTER;
-                        }
-                        return square;
+                        } else {
+	                        return square;
+			}
                     
                 case BASE:
                         if (steps == 6) {
