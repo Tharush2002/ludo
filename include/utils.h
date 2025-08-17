@@ -10,9 +10,24 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+    #include <windows.h>
+    static inline void sleep_ms(int milliseconds) {
+        Sleep(milliseconds);
+    }
+#else
+    #include <time.h>
+    static inline void sleep_ms(int milliseconds) {
+        struct timespec ts;
+        ts.tv_sec = milliseconds / 1000;
+        ts.tv_nsec = (milliseconds % 1000) * 1000000L;
+        nanosleep(&ts, NULL);
+    }
+#endif
+
 const char* get_colour(Colour colour);
 const char* get_square_type(SquareType type);
-const char* get_piece_status(PieceStatus status);
+//const char* get_piece_status(PieceStatus status);
 int get_approach(Colour colour);
 int get_start(Colour colour);
 int get_random_num(int num);
