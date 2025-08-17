@@ -32,30 +32,22 @@ typedef enum {
 	COLOUR_YELLOW=3
 } Colour;
 
-// typedef enum {
-// 	PIECE_STANDARD=0,
-// 	PIECE_HOME=1,
-// 	PIECE_BASE=2,
-// 	PIECE_FINISHED=3
-// } PieceStatus;
-
 typedef struct{
 	int index, x, y;
 	SquareType type;
 } Square;
 
 typedef struct {
-	//int new_index, index;
-	//float current_x, current_y;
 	Square current_square, destination_square;
 	Colour colour;
 	int is_moving;
 } Piece;
 
 typedef struct {
-         Piece pieces[NUM_OPPONENTS][NUM_PIECES];
-         Colour player;
-         int dice, turn_count, six_rolls;
+        Piece pieces[NUM_OPPONENTS][NUM_PIECES];
+        Colour player;
+	int dice, turn_count, six_rolls, show_dice, dice_phase;
+	double dice_show_time;    // When dice was shown
 } GameState;
  
 typedef struct {
