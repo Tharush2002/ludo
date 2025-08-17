@@ -23,18 +23,6 @@ const char* get_square_type(SquareType type){
 	}
 }
 
-// const char* get_piece_status(PieceStatus status){
-// 	switch(status){
-// 		case PIECE_STANDARD: return "PIECE_STANDARD";
-// 		case PIECE_HOME: return "PIECE_HOME";
-// 		case PIECE_BASE: return "PIECE_BASE";
-// 		case PIECE_FINISHED: return "PIECE_FINISHED";
-// 		default: 
-// 			assert(0 && "Unhandled piece status in get_piece_status");
-// 			return "UNKNOWN";
-// 	}
-// }
-
 int get_approach(Colour colour){
 	switch(colour){
 		case COLOUR_RED: return RED_APPROACH;
@@ -64,7 +52,7 @@ int get_random_num(int num){
 }
 
 int get_distance_standard(int from, int to) {
-    return (to - from + 52) % 52;
+        return (to - from + 52) % 52;
 }
 
 int is_approach_passed(Piece *selected_piece, int steps){
@@ -102,45 +90,38 @@ Square get_destination(Piece *piece, int steps) {
         switch(piece->current_square.type) {
                 case STANDARD:
                         if(is_approach_passed(piece, steps)) {
-                            int distance_to_approach = get_distance_standard(
-                                piece->current_square.index, 
-                                get_approach(piece->colour)
-                            );
-                            int remaining_steps = steps - distance_to_approach - 1;
-                            
-                            if (remaining_steps < NUM_HOME_SQUARES) {
-                                return home[piece->colour][remaining_steps];
-                                //square.type = HOME; // Ensure type is set
-                                //return square;
-                            }
+                                int distance_to_approach = get_distance_standard(
+                                        piece->current_square.index, 
+                                        get_approach(piece->colour)
+                                );
+                                int remaining_steps = steps - distance_to_approach - 1;
+                                
+                                if (remaining_steps < NUM_HOME_SQUARES) {
+                                        return home[piece->colour][remaining_steps];
+                                }
                         } else {
-                            return standard[(piece->current_square.index + steps) % NUM_STANDARD_SQUARES];
-                            //square.type = STANDARD; // Ensure type is set
-                            //return square;
+                                return standard[(piece->current_square.index + steps) % NUM_STANDARD_SQUARES];
                         }
                         break;
                     
                 case HOME:
                         if((piece->current_square.index + 1 + steps) < NUM_HOME_SQUARES) {
-                            return home[piece->colour][piece->current_square.index + steps];
-                            //square.type = HOME;
+                                return home[piece->colour][piece->current_square.index + steps];
                         } else if((piece->current_square.index + 1 + steps) == NUM_HOME_SQUARES) {
-                            return center[piece->colour][0];
-                            //square.type = CENTER;
+                                return center[piece->colour][0];
                         } else {
 	                        return square;
 			}
                     
                 case BASE:
                         if (steps == 6) {
-                            int start = get_start(piece->colour);
-                            return standard[start];
-                            //square.type = STANDARD;
+                                int start = get_start(piece->colour);
+                                return standard[start];
                         }
                         return square;
                     
                 case CENTER:
-                        return square; // Cannot move from center
+                        return square; 
                     
                 default:
                         return square;
