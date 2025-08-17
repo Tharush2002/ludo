@@ -319,9 +319,9 @@ void generate_possible_moves(Move *moves, Piece *movable_pieces){
 		if(destination.x == 0 && destination.y == 0 && destination.type == 0 && destination.index == 0){
 			moves[i].can_move = 0;
 		}else{
-		        moves[i].can_move = is_valid_move(&moves[i]);
-			moves[i].to_index = destination.index;
+		        moves[i].to_index = destination.index;
 		        moves[i].to = destination.type;
+		        moves[i].can_move = is_valid_move(&moves[i]);
 		}
 		//print_move(&moves[i]);
 	}
@@ -335,10 +335,10 @@ int is_valid_move(Move *move){
 			for(int i=0 ; i < NUM_PIECES ; i++){
                                 if(move->piece_index == i) continue;
 				printf("Move is to %s\n", get_colour(game.player));
-				printf(move->to == game.pieces[game.player][i].current_square.type ? "\t1st Condition True\n":"\t1st Condition False\n");
+				printf(move->to == STANDARD ? "\t1st Condition True\n":"\t1st Condition False\n");
 				printf(move->to_index == game.pieces[game.player][i].current_square.index ? "\t2nd Condition True\n":"\t2nd Condition False\n");
 				printf("===============================================\n\n");
-                                if((move->to == game.pieces[game.player][i].current_square.type) && 
+                                if((move->to == STANDARD) && 
                                   (move->to_index == game.pieces[game.player][i].current_square.index)){ 
 					printf("\n\n\n\n\n??????????????????????\n");
 					print_move(move);
