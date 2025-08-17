@@ -23,17 +23,17 @@ const char* get_square_type(SquareType type){
 	}
 }
 
-const char* get_piece_status(PieceStatus status){
-	switch(status){
-		case PIECE_STANDARD: return "PIECE_STANDARD";
-		case PIECE_HOME: return "PIECE_HOME";
-		case PIECE_BASE: return "PIECE_BASE";
-		case PIECE_FINISHED: return "PIECE_FINISHED";
-		default: 
-			assert(0 && "Unhandled piece status in get_piece_status");
-			return "UNKNOWN";
-	}
-}
+// const char* get_piece_status(PieceStatus status){
+// 	switch(status){
+// 		case PIECE_STANDARD: return "PIECE_STANDARD";
+// 		case PIECE_HOME: return "PIECE_HOME";
+// 		case PIECE_BASE: return "PIECE_BASE";
+// 		case PIECE_FINISHED: return "PIECE_FINISHED";
+// 		default: 
+// 			assert(0 && "Unhandled piece status in get_piece_status");
+// 			return "UNKNOWN";
+// 	}
+// }
 
 int get_approach(Colour colour){
 	switch(colour){
@@ -206,8 +206,8 @@ Square get_next_square_in_path(Piece *piece) {
                     return home[piece->colour][current.index + 1];
                 }
         }
-        else if (current.type == BASE && destination.type == STANDARD) {
-                // Moving from base directly to start position
+        else if ((current.type == BASE && destination.type == STANDARD) || (current.type == STANDARD && destination.type == BASE)) {
+                // Moving from base directly to start position and back and forth
                 return destination;
         }
         
@@ -228,7 +228,13 @@ int update_piece_position(Piece *piece, float speed) {
                 piece->current_square.index == piece->destination_square.index &&
                 piece->current_square.type == piece->destination_square.type) {
                 piece->is_moving = 0;
-                return 0; // Movement complete
+                
+		if(best_move.capture_available == 1){
+			sleep_ms(500);
+			best_move.captured->is_moving = 1;
+		}		
+
+		return 0; // Movement complete
         }
         
         // Get the next square in the path
@@ -251,11 +257,17 @@ int update_piece_position(Piece *piece, float speed) {
                 
                 // Check if this was our final destination
                 if (next_square.x == piece->destination_square.x && 
-                    next_square.y == piece->destination_square.y &&
-                    next_square.index == piece->destination_square.index &&
-                    next_square.type == piece->destination_square.type) {
-                    piece->is_moving = 0;
-                    return 0; // Reached final destination
+                    	next_square.y == piece->destination_square.y &&
+                    	next_square.index == piece->destination_square.index &&
+                    	next_square.type == piece->destination_square.type) {
+	               	piece->is_moving = 0;
+
+			if(best_move.capture_available == 1){ 
+				sleep_ms(500);
+				best_move.captured->is_moving = 1;
+			}		
+
+                    	return 0; // Reached final destination
                 }
                 
                 return 1; // Continue moving to next square
